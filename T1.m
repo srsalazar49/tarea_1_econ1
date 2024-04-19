@@ -1,6 +1,7 @@
 % ----------------------------------------------------------------------- %
 %                       TAREA 1 - ECONOMETRIA I - ME
 %        Grupo 3: F. Anguita, N. Bastias, C. Cid, T Munoz O. & R. Salazar
+%      ültima actualización: 19/04/2024 17:04
 % ----------------------------------------------------------------------- %
 
 %% Agregando los directorios por usuario
