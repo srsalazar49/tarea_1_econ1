@@ -53,15 +53,13 @@ matriz = zeros(n,5); % Matriz que guardara los resultados de cada individuo
 % concatenar
 
 rng(10) % fijando la semilla
-j = 1;
-i = 1;
+j = 1
 for g = 1:grupo
-    
-    matriz((j:j+24),1) = g; % indica el grupo de cada individuo
+    matriz(j:j+24,1) = [g]; % indica el grupo de cada individuo
     
     % Primero con el error a nivel de grupo
     v_g = normrnd(0,1);
-    matriz((j:j+24),2) = v_g; % guarda el resultado en la columna 2 de la 
+    matriz(j:j+24,2) = [v_g']; % guarda el resultado en la columna 2 de la 
     % matriz ya que es a nivel de grupo   
         
     % Ahora iteramos a nivel de individuo dentro de cada grupo
@@ -70,11 +68,11 @@ for g = 1:grupo
         % El error individual
         epsilon_ig = normrnd(0,1);  
         
-        matriz(i,3) = epsilon_ig;
+        matriz(j:,3) = [epsilon_ig];
         
         % El X_{2ig}
         x_2ig = normrnd(5,1);  
-        matriz(i,4) = [x_2ig];
+        matriz(:,4) = [x_2ig];
         
         % El X_{1ig} el cual depende del valor de 'v_g'
         if  v_g < 0                         
@@ -83,17 +81,13 @@ for g = 1:grupo
             x_1ig = normrnd(5,1);
         end
         
-        matriz(i,5) = [x_1ig];
+        matriz(:,5) = [x_1ig];
         
-        i = i+1
-        
-    end
+        end
     
-    j = j + 25;
+    j+24;
 
 end
-
-
 
 X1 = reshape(x_1ig,[],1);
 %falta el vercor del v con 1000x1
