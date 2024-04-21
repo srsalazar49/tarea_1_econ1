@@ -56,7 +56,7 @@ for g = 1:grupo
         
     % Calculamos el error individual por grupo
     epsilon_ig = normrnd(0,1,[1,n_g]);
-    matriz((j:j+24),3) = (epsilon_ig'); % guarda el resultado en la columna 3
+    matriz((j:j+24),3) = epsilon_ig'; % guarda el resultado en la columna 3
         
     % Calculamos el X_{2ig} por grupo
     x_2ig = normrnd(5,1,[1,n_g]);  
@@ -86,16 +86,33 @@ e_ig = matriz(:,3) + matriz(:,2);
 % con los diferentes coeficientes, columnas de la matriz y los errores
 y_ig = beta(1) + beta(2) * matriz(:,5) + beta(3) * matriz(:,4) + e_ig;
 
+% A partir de esto, todas las variables tienen dimensiones de (1000x1)
+
 %% 1. SUPUESTOS MRL QUE CUMPLEN LOS DATOS SIMULADOS
 
-% a. Observaciones vienen de una distribucion comun y son independientes (iid)
-% b. X e Y satisfacen Y = X'*beta + e y E(e|X)=0 [E(Y|X) = X'*beta) -> Mejor
-% predictor lineal igual a la esperanza
+% a. Observaciones vienen de una distribucion comun y son independientes 
+% (iid) entre grupos, pero no entre todas las observaciones
+% b. X e Y satisfacen Y = X'*beta + e y E(e_g|X) = 0 ya que los grupos son
+% independientes, no obstante, no podemos afirmar que E(e_ig|X) = 0 dado a
+% que hay un termino de error a nivel grupal junto con el hecho de que no
+% hay independencia en la variable independiente X1. Por ello, 
+% [E(Y|X) = X'*beta) -> Mejor predictor lineal igual a la esperanza a nivel
+% grupal
 % c. Segundos momentos finitos (varianza acotada) E(Y^2)<inf, E||X||^2<inf
-% d. Ausencia de multicolinealidad peftecta -> Q_xx = E(X'X)>0
-% e. Homocedasticidad de los errores -> E(e^2|X) = sigma^2 (varianza cte)
+% d. Ausencia de multicolinealidad perfecta al menos a nivel grupal, podria
+% haber a nivel individual dependiendo; de todas maneras, si se cumple que
+% Q_xx = E(X'X) > 0, no deberia haber multicolinealidad
+% e. Homocedasticidad de los errores, si a nivel grupal, no necesariamente
+% a nivel individual, ya que hay un termino del error que depende del grupo
+% en el pertenece el individuo: E(e^2|X) = sigma^2(X) 
+% (varianza depende del X)
 
 %% 2. COEFICIENTES MCO 
+% Estime los coeficientes de MCO. Interprete sus resultados.
+
+% Ahora debemos calcular los diferentes betas de MCO donde debemos utilizar
+% la regresion particionada para ello considerando que estamos en presencia
+% de un intercept.
 
 % Por formula betas
 b_1 = inv(x_1ig'*x_1ig)*x_1ig'*y_ig;

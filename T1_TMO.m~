@@ -51,16 +51,16 @@ for g = 1:grupo
     
     % Calculamos el error a nivel de grupo
     v_g = normrnd(0,1);
-    matriz((j:j+24),2) = v_g; % guarda el resultado en la columna 2 de la 
+    matriz((j:j+24),2) = v_g'; % guarda el resultado en la columna 2 de la 
     % matriz
         
     % Calculamos el error individual por grupo
     epsilon_ig = normrnd(0,1,[1,n_g]);
-    matriz(j,3) = epsilon_ig'; % guarda el resultado en la columna 3
+    matriz((j:j+24),3) = epsilon_ig'; % guarda el resultado en la columna 3
         
     % Calculamos el X_{2ig} por grupo
     x_2ig = normrnd(5,1,[1,n_g]);  
-    matriz(j,4) = x_2ig';  % guarda el resultado en la columna 4
+    matriz((j:j+24),4) = x_2ig';  % guarda el resultado en la columna 4
         
     % Calculamos el X_{1ig} condicional al valor que toma 'v_g'
     if  v_g < 0      % valores < 0                   
@@ -69,26 +69,35 @@ for g = 1:grupo
        x_1ig = normrnd(5,1,[1,n_g]);
     end
        
-    matriz(j,5) = x_1ig';  % guarda el resultado en la columna 5
+    matriz((j:j+24),5) = x_1ig';  % guarda el resultado en la columna 5
         
-    % Para el grupo siguiente, ahora se 
-    j = j + 25; % le suma 25 para empezar a iterar
+    % Para el grupo siguiente, ahora se deben considerar las siguientes 25
+    % personas, por lo que a 'j' se le suma 25 para volver a iterar
+    j = j + 25;
 
 end
 
+% Ahora bien, el termino de error del modelo Y_{ig} consider la suma de los
+% errores individuales y grupales, por lo que se puede reescribir como
+% e_{ig} = epislon_{ig} + v_g
+e_ig = matriz(:,3) + matriz(:,2);
 
+% Finalmente entonces, el modelo a estimar considera los diferentes betas
+% con los diferentes coeficientes, columnas de la matriz y los errores
+y_ig = beta(1) + beta(2) * matriz(:,5) + beta(3) * matriz(:,4) + e_ig;
 
-X1 = reshape(x_1ig,[],1);
-%falta el vercor del v con 1000x1
-
-c_ig = e_ig + v_g;
-
-y_ig = b(1) + b(2)*x_1ig + b(3)*x_2ig + c_ig;
+% A partir de esto, todas las variables tienen dimensiones de (1000x1)
 
 %% 1. SUPUESTOS MRL QUE CUMPLEN LOS DATOS SIMULADOS
 
-% a. Observaciones vienen de una distribucion comun y son independientes (iid)
-% b. X e Y satisfacen Y = X'*beta + e y E(e|X)=0 [E(Y|X) = X'*beta) -> Mejor
+% a. Observaciones vienen de una distribucion comun y son independientes 
+% (iid) entre grupos, pero no entre todas las observaciones
+% b. X e Y satisfacen Y = X'*beta + e y E(e_g|X) = 0 ya que los grupos son
+% independientes, no obstante, no podemos afirmar que E(e_ig|X) = 0 dado a
+% que hay un termino de error a nivel grupal junto con el hecho de que no
+% hay independencia en la variable 
+
+[E(Y|X) = X'*beta) -> Mejor
 % predictor lineal igual a la esperanza
 % c. Segundos momentos finitos (varianza acotada) E(Y^2)<inf, E||X||^2<inf
 % d. Ausencia de multicolinealidad peftecta -> Q_xx = E(X'X)>0
