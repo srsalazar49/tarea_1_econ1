@@ -1,20 +1,10 @@
-% ----------------------------------------------------------------------- %
-%                       TAREA 1 - ECONOMETRIA I - ME
+% ----------------------------------------------------------------------- 
+%                       TAREA 1 - ECONOMETRÍA I - ME
 %        Grupo 3: F. Anguita, N. Bastias, C. Cid, T Munoz O. & R. Salazar
-%      ültima actualización: 19/04/2024 17:04
-% ----------------------------------------------------------------------- %
+% ----------------------------------------------------------------------- 
 
-%% Agregando los directorios por usuario
+%% Directorios por usuario
 clc;clear;
-
-% Path Tamara
-if strcmp(char(java.lang.System.getProperty('user.name')),'tamaramunoz')==1
-    data='/Users/tamaramunoz/Desktop/1st semester ME/Econometría I/Tarea/Main/';
-    
-% Path Fernanda 
-elseif strcmp(char(java.lang.System.getProperty('user.name')),'ferna')==1
-    data='C:\Users\ferna\Desktop\ME_Otoño 2024\Econometría I\Tarea 1'; 
-end
 
 %% 0. SIMULACIÓN DE BASE DE DATOS
 
@@ -29,73 +19,101 @@ end
 % X_{1ig} = N(5,1) if \nu_{g} >= 0
 % X_{2ig} = N(5,1)
 
-% Parametros
+% Establecemos parámetros
 b = [1, 2, 4];                          % Vector beta
-n = 1000;                               % Numero de personas
-g = 40;                                 % Numero de grupos
+n = 1000;                               % Número de personas
+g = 40;                                 % Número de grupos
 n_g = n/g;                              % Cantidad de personas por grupo
+rng(23);                                 % Semilla
 
-% Genero residuo ig y x2
+% Generamos residuo ig y x2
 e_ig = normrnd(0,1,[n, 1]);             %                       (1000x1)           
 x_2ig = normrnd(5,1,[n, 1]);            %                       (1000x1)
 
-% Inicializo matrices
+% Inicializamos matrices
 x_1 = zeros(n_g, g);                    % X1                      (25x40)  
 y_ig = zeros(n, 1);                     % Y                       (1000x1)
-v = zeros(n_g, 1);
+v = zeros(n_g, 1);                      % v                       (40x1)
 
+% Iteramos para cada grupo el generar su residuo y valores de x1
+% residuos por grupo quedan en vector v(40x1) y x1 por grupo quedan en matriz x_1(25x40)(ixg)
 for z = 1:g          
-     
-    v(z,1) = normrnd(0,1); %NUEVOO
-    %v = normrnd(0,1,[n_g, 1]);  %SI LO NUEVO FUNCIONA ESTO NO VA 
-                
+    v(z,1) = normrnd(0,1);         
     if  v(z,1) < 0                         
         x_1(:, z) = normrnd(3,1,[n_g, 1]);  
     else
         x_1(:, z) = normrnd(5,1,[n_g, 1]);
     end
-
 end
 
-x_1ig = reshape(x_1ig,[],1);
+% Vectorizamos matriz x_1 en x_1ig(1000x1)
+x_1ig = reshape(x_1,[],1);
 
-%intento fallido v con 1000x1 NUEVOO FALTA EL RESHAPE
-vg = repmat(v,1,25);
-v_g = reshape(vg,[1000,1]);
+% Generamos v_g(1000x1) repitiendo v de cada grupo en cada obs del grupo
+indx = 1;
+for i = 1:length(v)
+    for j = 1:25
+        vg(indx) = v(i);
+        indx = indx + 1;
+    end
+end
+v_g = reshape(vg,[],1);
 
+% Generamos residuo del modelo
 c_ig = e_ig + v_g;
 
+% Generamos variable dependiente
 y_ig = b(1) + b(2)*x_1ig + b(3)*x_2ig + c_ig;
 
 %% 1. SUPUESTOS MRL QUE CUMPLEN LOS DATOS SIMULADOS
 
 % a. Observaciones vienen de una distribucion comun y son independientes (iid)
-% b. X e Y satisfacen Y = X'*beta + e y E(e|X)=0 [E(Y|X) = X'*beta) -> Mejor
-% predictor lineal igual a la esperanza
+% b. X e Y satisfacen Y = X'*beta + e y E(e|X)=0 [E(Y|X) = X'*beta) -> Mejor predictor lineal igual a la esperanza
 % c. Segundos momentos finitos (varianza acotada) E(Y^2)<inf, E||X||^2<inf
 % d. Ausencia de multicolinealidad peftecta -> Q_xx = E(X'X)>0
 % e. Homocedasticidad de los errores -> E(e^2|X) = sigma^2 (varianza cte)
 
 %% 2. COEFICIENTES MCO 
 
-% Por formula betas
-b_1 = inv(x_1ig'*x_1ig)*x_1ig'*y_ig;
-b_2 = inv(x_2ig'*x_2ig)*x_2ig'*y_ig;
+% Especificación MCO: y_ig = b_0 + b_1*x_1ig + b_2*x_2ig + c_ig
 
-% Como dice el internet (ya me perdi, cuantos beta hay que sacar?)
-b_mco = zeros(3, g);
+% Obtenemos los estimadores/coeficientes por fórmula
+b_1 = inv(x_1ig'*x_1ig)*(x_1ig'*y_ig);
+b_2 = inv(x_2ig'*x_2ig)*(x_2ig'*y_ig);
+x_0 = ones(n, 1);
+b_0 = inv(x_0'*x_0)*(x_0'*y_ig);                                   
 
-for z = 1:g
-    
-    y = y_ig(:, z) - mean(y_ig(:, z));
-    x_1ig_v2 = x_1ig(:, z) - mean(x_1ig(:, z));
-    x_2ig_v2 = x_2ig(:, z) - mean(x_2ig(:, z));
-    
-    x = [ones(n_g, 1), x_1ig_v2, x_2ig_v2];
-   
-    b_mco(:, z) = inv(x'*x)*x'*y;       % formula matricial beta
-end
+% Alternativa matricial 
+x_ig = [ones(n, 1), x_1ig, x_2ig];
+b_mco=inv(x_ig'*x_ig)*(x_ig'*y_ig);
 
+% Pregunta seria: pq dan distinto las dos formas?
+
+%% 3. ERRORES ESTANDAR
+
+% 3.1. Homocedasticidad y ausencia de correlacion
+
+r = y_ig - x_ig*b_mco;                  % Residuos mco  
+s2 = (1./(n-3))*(r'*r);                 % Estimador varianza del error s2 = (r'*r)/(n-3)
+ee = sqrt(diag(s2*inv(x_ig'*x_ig)));    % Errores estándar (me pierdo en pq se usa la diagonal:c)
+
+% 3.2. Robustos
+
+
+
+% 3.3. Agrupados
+
+
+
+%% 4. TEST DE HIPOTESIS NULA
+
+%% 5. MODELO CON EFECTOS FIJOS
+
+% Especificación con efectos fijos: y_ig = b_0 + b_1*x_1ig + b_2*x_2ig + v_g + e_ig
+
+%% 6. FWL Y MODELO DE EFECTOS FIJOS
+
+% Definición FWL 
 % Formula de regresion particionada
 I = eye(n_g, n_g);
 P_1 = zeros(n_g, n_g);
@@ -112,33 +130,84 @@ P_2(:, z) = x_2ig*inv(x2_1ig'*x_2ig)*x_2ig';
 M_1(:, z) = I - P_1;
 M_2(:, z) = I - P_2;
 
-b_1 = inv(x_1ig'*M_2*x_1ig)*x_1ig'*M_2*y_ig; %escalares
+b_1 = inv(x_1ig'*M_2*x_1ig)*x_1ig'*M_2*y_ig; 
 b_2 = inv(x_2ig'*M_1*x_2ig)*x_2ig'*M_1*y_ig;
+
 end
-
-%% 3. ERRORES ESTANDAR
-
-% 3.1. Homocedasticidad y ausencia de correlacion
-
-ee = (1./(n-g))*((error'*error)\(X'*X));        % errores estandar
-ee = sqrt(diag(ee));
-t_stat = beta./ee;
-
-% 3.2. Robustos
-
-
-% 3.3. Agrupados
-
-%% 4. TEST DE HIPOTESIS NULA
-
-%% 5. MODELO CON EFECTOS FIJOS
-
-
-%% 6. FWL Y MODELO DE EFECTOS FIJOS
 
 %% 7. REPETICION CON DISTINTA DISTRIBUCION DE X1
 
+clc;clear;
+
+% Parámetros, e_ig, x_2ig, v_g se mantienen igual 
+b = [1, 2, 4];                          
+n = 1000;                              
+g = 40;                                 
+n_g = n/g;                             
+rng(23)                                 
+
+e_ig = normrnd(0,1,[n, 1]);                        
+x_2ig = normrnd(5,1,[n, 1]);           
+
+v = normrnd(0,1,[g,1]);  
+indx = 1;
+for i = 1:length(v)
+    for j = 1:25
+        vg(indx) = v(i);
+        indx = indx + 1;
+    end
+end
+v_g = reshape(vg,[],1);
+
+% Volvemos a simular x_1ig (que ahora depende de w_i) y recalculamos y_ig
+x_1 = zeros(n, 1);                       
+y_ig = zeros(n, 1);                     
+w_i = zeros(n, 1);                      
+
+for z = 1:n          
+    w_i(z,1) = unifrnd(0,1);         
+    if  w_i(z,1) < 0.5                         
+        x_1(:, z) = normrnd(3,1,[n_g, 1]);  
+    else
+        x_1(:, z) = normrnd(5,1,[n_g, 1]);
+    end
+end
+
+c_ig = e_ig + v_g;
+
+y_ig = b(1) + b(2)*x_1ig + b(3)*x_2ig + c_ig;
+
+% Repetimos desarrollo de preguntas 1. a 5. 
+
+%1. SUPUESTOS MRL QUE CUMPLEN LOS DATOS SIMULADOS
+
+    % a. Observaciones vienen de una distribucion comun y son independientes (iid)
+    % b. X e Y satisfacen Y = X'*beta + e y E(e|X)=0 [E(Y|X) = X'*beta) -> Mejor predictor lineal igual a la esperanza
+    % c. Segundos momentos finitos (varianza acotada) E(Y^2)<inf, E||X||^2<inf
+    % d. Ausencia de multicolinealidad peftecta -> Q_xx = E(X'X)>0
+    % e. Homocedasticidad de los errores -> E(e^2|X) = sigma^2 (varianza cte)
+
+% 2. COEFICIENTES MCO 
+
+    % Especificación MCO: y_ig = b_0 + b_1*x_1ig + b_2*x_2ig + c_ig
+
+    % Obtenemos los estimadores/coeficientes por fórmula
+    b_1 = inv(x_1ig'*x_1ig)*x_1ig'*y_ig;
+    b_2 = inv(x_2ig'*x_2ig)*x_2ig'*y_ig;
+    b_0                                     %??
+
+    % Alternativa matricial 
+    x_ig = [ones(n, 1), x_1ig, x_2ig];
+    b_mco=inv(x_ig'*x_ig)*(x_ig'*y_ig);
+
+% 3. Ecnwldcvw
+
+% 4. 
+
+% 5.  
+
+
 %% 8. RESUMA LO APRENDIDO
 
-% Está fucking larga la tarea
+
 
