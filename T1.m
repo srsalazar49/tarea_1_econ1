@@ -107,10 +107,40 @@ d = diag(r.^2);                        % d = matriz diagonal de r^2
 mvc_w = inv(x_ig'*x_ig)*(x_ig'*d*x_ig)*inv(x_ig'*x_ig);      % Matriz de White (var-cov robusta)
 ee_r = sqrt(diag(mvc_w));              % Errores estándar robustos
 
-$ 3.3. Agrupados (clausterizados) 
+% 3.3. Agrupados (clausterizados: indepencia entre grupos no al interior de ellos)
 
+%PENDIENTEEEE
+grupo = floor((0:size(x_ig, 1)-1) / 25) + 1;     % Indicador de grupo
+grupo = reshape(grupo, [],1);                       
+x = [x_ig, grupo];                               % X con columna de grupo
+
+r = y_ig - x_ig*b_mco;
+dg = dummyvar(grupo);                  % Dummy por grupo
+d = diag(r.^2);                        %
+mvc_a = inv(x_ig'*x_ig)*dg'*d*dg*inv(x_ig'*x_ig);  % Matriz var-cov agrupada
+ee_a = sqrt(diag(mvc_a));
 
 %% 4. TEST DE HIPOTESIS NULA
+
+% H0: b_1 = 1 -> H1: b_1 <> 1
+
+% Test con ee bajo homocedasticidad
+tt_1 = b_mco(2)/ee(2);
+pv_1 = 2 * (1 - tcdf(abs(t_test), length(y_ig) - size(x_ig, 2)));
+
+% Test con ee robustos
+tt_2 = b_mco(2)/ee_r(2);
+pv_2 = 2 * (1 - tcdf(abs(t_test), length(y_ig) - size(x_ig, 2)));
+
+% Test con ee agrupados
+tt_3 = b_mco(2)/ee_g(2);
+pv_3 = 2 * (1 - tcdf(abs(t_test), length(y_ig) - size(x_ig, 2)));
+
+% ALTERNATIVA 2
+R = [0; 1; 0];
+t1 = (R'*b_mco)/sqrt((ee.^2)*R'*inv(x_ig'*x_ig)*R);
+t2 = (R'*b_mco)/sqrt((ee_r.^2)*R'*inv(x_ig'*x_ig)*R);
+t3 = (R'*b_mco)/sqrt((ee_a.^2)*R'*inv(x_ig'*x_ig)*R);
 
 %% 5. MODELO CON EFECTOS FIJOS
 
