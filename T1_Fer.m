@@ -171,7 +171,19 @@ b2_fe= inv(x_2ig'*M_1*x_2ig)*x_2ig'*M_1*y_ig;
 
 %% 6. FWL Y MODELO DE EFECTOS FIJOS
 
-% Definición FWL 
+% b_1 es el estimador de la regresion de y_1 - y con x_1 - x 
+
+% Obtenemos medias de las variables
+Y = mean(y_ig);
+X1 = mean(x_1ig);
+X2 = mean(x_2ig);
+
+% Calculamos estimadores
+B1 = inv(X1'*X1)*(X1'*Y);
+B2 = inv(X2'*X2)*(X2'*Y);
+
+% No estoy aplicando efectos fijos creo
+
 
 
 %% 7. REPETICION CON DISTINTA DISTRIBUCION DE X1
