@@ -1,0 +1,7 @@
+% Creamos la funcion que permite calcular s^2
+function [k,s_2] = s2(N, beta_gorro, e_gorro)
+
+% El k que se obtiene es el valor del largo del vector de betas e
+k = length(beta_hat);
+s2   = (epsilon_hat'*epsilon_hat)/(N-k); %calculamos el estimador de la varianza 
+end

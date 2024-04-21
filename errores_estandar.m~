@@ -1,0 +1,9 @@
+% Definimos una funcion de los errores estandar que consideran el supuesto
+% de homocedasticidad y ausencia de correlacion
+
+function [var_bgorro, e_estandar] = errores_estandar(s2,X)
+
+% Primero se define cual es la varianza conditional
+var_bgorro = s2*((X'*X)^(-1)); %Calcualmos la varianza de de los betas
+e_estandar= sqrt(varbeta_hat); %obtenemos los errores estandar
+end

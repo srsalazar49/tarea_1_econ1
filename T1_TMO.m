@@ -143,7 +143,8 @@ X = [x_0 X1 X2];
 
 % Calculamos ahora los beta con la funcion de MCO que definimos
 % previamente:
-[beta_gorro] = MCO(Y,X); %calculamos los betas con una funcion que definimos
+[beta_gorro, e_gorro] = MCO(Y,X); %calculamos los betas con una 
+% funcion que definimos
 
 % Redondeamos los betas para que tengan hasta 3 decimales
 beta_gorro = round(beta_gorro, 2);
@@ -156,11 +157,29 @@ type 'tabla_P2.txt'
 
 %% 3. ERRORES ESTANDAR
 
-% 3.1. Homocedasticidad y ausencia de correlacion
+% Calcule los siguientes errores estandar:
+% 3.1. Asumiendo homocedasticidad y ausencia de correlacion
+% Calculamos entonces los errores estandar asumiendo homocedasticidad como:
+% SD = s
+% Ya que no observamos a sigma directamente
 
-ee = (1./(n-g))*((error'*error)\(X'*X));        % errores estandar
-ee = sqrt(diag(ee));
-t_stat = beta./ee;
+% Sabemos que s^2 = (1/(n-k)) * e'e
+
+% El e gorro se obtiene de la estimacion de MCO (se incluye entonces el 
+% e_gorro en la función definida de MCO)
+
+% Corremos nuevamente el codigo de MCO para tener nuevamente los betas sin
+% redondear
+[beta_gorro, e_gorro] = MCO(Y,X);
+
+% Ahora corremos la funcion de s^2
+N = n;
+[K,s_2] = s2(N, beta_gorro, e_gorro);
+
+% Luego, corremos la funcion de los errores estandar que estan en funcion
+% de s^2
+[var_bgorro, e_estandar] = errores_estandar(s_2,X);
+
 
 % 3.2. Robustos
 
