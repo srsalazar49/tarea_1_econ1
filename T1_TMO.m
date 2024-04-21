@@ -42,7 +42,7 @@ matriz = zeros(n,5); % Matriz que guardara los resultados de cada individuo
 % cada resultado se guarda en una matriz diferente que luego se van a
 % concatenar
 
-rng(10) % fijando la semilla
+rng(14) % fijando la semilla
 j = 1; % variable auxiliar
 for g = 1:grupo
     
@@ -147,18 +147,20 @@ X = [x_0 X1 X2];
 % funcion que definimos
 
 % Redondeamos los betas para que tengan hasta 3 decimales
-beta_gorro = round(beta_gorro, 2);
+beta_gorro_2 = round(beta_gorro, 2);
 
 % Exportamos los resultados en una tabla
 tabla_P2 = table(['\beta_0';'\beta_1';'\beta_2'],... 
-    [beta_gorro(1);beta_gorro(2); beta_gorro(3)]);
+    [beta_gorro_2(1);beta_gorro_2(2); beta_gorro_2(3)]);
 writetable(tabla_P2,'tabla_P2.txt','Delimiter',' ')  
 type 'tabla_P2.txt'
 
 %% 3. ERRORES ESTANDAR
 
 % Calcule los siguientes errores estandar:
+
 % 3.1. Asumiendo homocedasticidad y ausencia de correlacion
+
 % Calculamos entonces los errores estandar asumiendo homocedasticidad como:
 % SD = s
 % Ya que no observamos a sigma directamente
@@ -181,10 +183,54 @@ N = n;
 [var_bgorro, e_estandar] = errores_estandar(s_2,X);
 
 
-% 3.2. Robustos
+% 3.2. Errores estandar robustos
+
+% Estos errores ahora no asumen homocedasticidad, sino heterocedasticidad,
+% por lo que el calculo es ligeramente diferente. Utilizando la definicion
+% del estimador de la varianza HC1 del Hansen (el que el libro recomienda), 
+% definimos previamente la funcion de ello y lo corremos
+[var_robust, ee_robust] = errores_robustos(N, K ,X, e_gorro);
 
 
-% 3.3. Agrupados
+% 3.3. Errores estandar agrupados
+
+% Ahora, para calcular los errores estandar agrupados, necesitamos realizar
+% la estimacion inicial de los beta a nivel de grupo ahora y no a nivel de
+% cada individuo. Por ello, agrupamos por grupo a cada variable del modelo
+% para estimar a Y nuevamente.
+
+% Lista de los diferentes grupos
+grupos = unique(matriz(:,1));
+
+% Dejando los valores unicos de v_g por grupo
+v_g2 = unique(matriz(:,2));
+
+% Agrupamos ahora las demas variables
+% Partiendo por epsilon_ig que ahora es epsilon_g
+epsilon_g = accumarray((matriz(:,1)), (matriz(:,3)));
+
+% Siguiendo con los x_1ig, ahora x_1g
+x_1g = accumarray((matriz(:,1)), (matriz(:,5)));
+
+% Los x_2ig, ahora x_2g
+x_2g = accumarray((matriz(:,1)), (matriz(:,4)));
+
+% Los y_ig, ahora y_g
+y_aux = [y_ig matriz(:,1)];
+y_g = accumarray((y_aux(:,2)), (y_aux(:,1)));
+
+% Definimos los errores cluster a partir de la estimacion del beta ahora en
+% cluster
+G = g;
+Y = y_g;
+X = [(ones(g, 1)) x_1g x_2g];
+
+% Estimamos el MCO para tener el error clusterizado
+[beta_gorro, e_gorro] = MCO(Y,X);
+e_cluster = e_gorro;
+
+% Hacemos ahora la estimacion
+[var_cluster, ee_cluster] = errores_cluster(N, K, G, X, e_cluster);
 
 %% 4. TEST DE HIPOTESIS NULA
 

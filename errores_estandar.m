@@ -7,6 +7,7 @@ function [var_bgorro, e_estandar] = errores_estandar(s_2,X)
 % Por definicion este es var(b|x) = s^2 (X'* X)^-1
 var_bgorro = s_2 * ((X' * X)^(-1));
 
-% Ahora bien, los errores estandar vendrian siendo la raiz de lo anterior
-e_estandar = sqrt(var_bgorro);
+% Ahora bien, los errores estandar vendrian siendo la raiz de la diagonal 
+% de lo anterior
+e_estandar = sqrt(diag(var_bgorro));
 end
