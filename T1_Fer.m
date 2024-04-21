@@ -126,21 +126,30 @@ ee_a = sqrt(diag(mvc_a));
 
 % Test con ee bajo homocedasticidad
 tt_1 = b_mco(2)/ee(2);
-pv_1 = 2 * (1 - tcdf(abs(t_test), length(y_ig) - size(x_ig, 2)));
+pv_1 = 2 * (1 - tcdf(abs(tt_1), length(y_ig) - size(x_ig, 2)));
+pv_1 = 2 * (1 - tcdf(abs(tt_1), 997));
 
 % Test con ee robustos
 tt_2 = b_mco(2)/ee_r(2);
-pv_2 = 2 * (1 - tcdf(abs(t_test), length(y_ig) - size(x_ig, 2)));
+pv_2 = 2 * (1 - tcdf(abs(tt_2), length(y_ig) - size(x_ig, 2))); % o bien comparar con tabla
 
 % Test con ee agrupados
 tt_3 = b_mco(2)/ee_g(2);
-pv_3 = 2 * (1 - tcdf(abs(t_test), length(y_ig) - size(x_ig, 2)));
+pv_3 = 2 * (1 - tcdf(abs(tt_3), length(y_ig) - size(x_ig, 2)));
 
 % ALTERNATIVA 2
 R = [0; 1; 0];
+z = tinv(1 - 0.05/2, 997);         % 1.9623
+
 t1 = (R'*b_mco)/sqrt((ee.^2)*R'*inv(x_ig'*x_ig)*R);
+pv1 = 2*(1-t1*1.9623); %??
+
 t2 = (R'*b_mco)/sqrt((ee_r.^2)*R'*inv(x_ig'*x_ig)*R);
+pv2 = ;
+
 t3 = (R'*b_mco)/sqrt((ee_a.^2)*R'*inv(x_ig'*x_ig)*R);
+pv3 = ;
+
 
 %% 5. MODELO CON EFECTOS FIJOS (p.635 hansen)
 
@@ -160,30 +169,10 @@ M_2 = I - P_2;
 b1_fe = inv(x_1ig'*M_2*x_1ig)*x_1ig'*M_2*y_ig; 
 b2_fe= inv(x_2ig'*M_1*x_2ig)*x_2ig'*M_1*y_ig;
 
-
 %% 6. FWL Y MODELO DE EFECTOS FIJOS
 
 % Definición FWL 
-% Formula de regresion particionada
-I = eye(n_g, n_g);
-P_1 = zeros(n_g, n_g);
-P_2 = zeros(n_g, n_g);
-M_1 = zeros(n_g, n_g);
-M_2 = zeros(n_g, n_g);
 
-for z = 1:g
-
-%hay que ajustar para que se vaya llenando la matriz
-P_1(:, z) = x_1ig*inv(x1_1ig'*x_1ig)*x_1ig';
-P_2(:, z) = x_2ig*inv(x2_1ig'*x_2ig)*x_2ig';
-
-M_1(:, z) = I - P_1;
-M_2(:, z) = I - P_2;
-
-b_1 = inv(x_1ig'*M_2*x_1ig)*x_1ig'*M_2*y_ig; 
-b_2 = inv(x_2ig'*M_1*x_2ig)*x_2ig'*M_1*y_ig;
-
-end
 
 %% 7. REPETICION CON DISTINTA DISTRIBUCION DE X1
 
@@ -213,13 +202,13 @@ v_g = reshape(vg,[],1);
 x_1 = zeros(n, 1);                       
 y_ig = zeros(n, 1);                     
 w_i = zeros(n, 1);                      
-
-for z = 1:n          
-    w_i(z,1) = unifrnd(0,1);         
+   
+for z = 1:n
+    w_i(z,1) = unifrnd(0,1); 
     if  w_i(z,1) < 0.5                         
-        x_1(:, z) = normrnd(3,1,[n_g, 1]);  
+        x_1(z, 1) = normrnd(3,1);  
     else
-        x_1(:, z) = normrnd(5,1,[n_g, 1]);
+        x_1(z, 1) = normrnd(5,1);
     end
 end
 
@@ -231,30 +220,78 @@ y_ig = b(1) + b(2)*x_1ig + b(3)*x_2ig + c_ig;
 
 %1. SUPUESTOS MRL QUE CUMPLEN LOS DATOS SIMULADOS
 
-    % a. Observaciones vienen de una distribucion comun y son independientes (iid)
-    % b. X e Y satisfacen Y = X'*beta + e y E(e|X)=0 [E(Y|X) = X'*beta) -> Mejor predictor lineal igual a la esperanza
-    % c. Segundos momentos finitos (varianza acotada) E(Y^2)<inf, E||X||^2<inf
-    % d. Ausencia de multicolinealidad peftecta -> Q_xx = E(X'X)>0
-    % e. Homocedasticidad de los errores -> E(e^2|X) = sigma^2 (varianza cte)
+    % Teorico
 
 % 2. COEFICIENTES MCO 
 
     % Especificación MCO: y_ig = b_0 + b_1*x_1ig + b_2*x_2ig + c_ig
 
-    % Obtenemos los estimadores/coeficientes por fórmula
-    b_1 = inv(x_1ig'*x_1ig)*x_1ig'*y_ig;
-    b_2 = inv(x_2ig'*x_2ig)*x_2ig'*y_ig;
-    b_0                                     %??
-
-    % Alternativa matricial 
+    % Estimadores
     x_ig = [ones(n, 1), x_1ig, x_2ig];
     b_mco=inv(x_ig'*x_ig)*(x_ig'*y_ig);
 
-% 3. Ecnwldcvw
+% 3. Errores estándar
+    % 3.1. Homocedasticidad y ausencia de correlacion
 
-% 4. 
+    r = y_ig - x_ig*b_mco;                    
+    s2 = (1./(n-3))*(r'*r);                 
+    mvc = s2*inv(x_ig'*x_ig);               
+    ee = sqrt(diag(mvc));                    
 
-% 5.  
+    % 3.2. Robustos (heterocedasticidad) 
+
+    r = y_ig - x_ig*b_mco;                 
+    d = diag(r.^2);                        
+    mvc_w = inv(x_ig'*x_ig)*(x_ig'*d*x_ig)*inv(x_ig'*x_ig);      
+    ee_r = sqrt(diag(mvc_w));              
+
+    % 3.3. Agrupados (clausterizados: indepencia entre grupos no al interior de ellos)
+
+%PENDIENTEEEE
+
+% 4. TEST DE HIPOTESIS NULA
+
+    % H0: b_1 = 1 -> H1: b_1 <> 1
+
+    % Test con ee bajo homocedasticidad
+    tt_1 = b_mco(2)/ee(2);
+    pv_1 = 2 * (1 - tcdf(abs(tt_1), length(y_ig) - size(x_ig, 2)));
+    pv_1 = 2 * (1 - tcdf(abs(tt_1), 997));
+
+    % Test con ee robustos
+    tt_2 = b_mco(2)/ee_r(2);
+    pv_2 = 2 * (1 - tcdf(abs(tt_2), length(y_ig) - size(x_ig, 2))); % o bien comparar con tabla
+
+    % Test con ee agrupados
+    tt_3 = b_mco(2)/ee_g(2);
+    pv_3 = 2 * (1 - tcdf(abs(tt_3), length(y_ig) - size(x_ig, 2)));
+
+    % ALTERNATIVA 2
+    R = [0; 1; 0];
+    z = tinv(1 - 0.05/2, 997);         % 1.9623
+
+    t1 = (R'*b_mco)/sqrt((ee.^2)*R'*inv(x_ig'*x_ig)*R);
+    pv1 = 2*(1-t1*1.9623); %??
+
+    t2 = (R'*b_mco)/sqrt((ee_r.^2)*R'*inv(x_ig'*x_ig)*R);
+    pv2 = ;
+
+    t3 = (R'*b_mco)/sqrt((ee_a.^2)*R'*inv(x_ig'*x_ig)*R);
+    pv3 = ;
+
+% 5. Modelo con efectos fijos
+
+y_ig = b(1) + b(2)*x_1ig + b(3)*x_2ig + v_g + e_ig;
+
+P_1 = x_1ig*inv(x_1ig'*x_1ig)*x_1ig';
+P_2 = x_2ig*inv(x_2ig'*x_2ig)*x_2ig';
+
+I = eye(n,n);
+M_1 = I - P_1;
+M_2 = I - P_2;
+
+b1_fe = inv(x_1ig'*M_2*x_1ig)*x_1ig'*M_2*y_ig; 
+b2_fe= inv(x_2ig'*M_1*x_2ig)*x_2ig'*M_1*y_ig;
 
 
 %% 8. RESUMA LO APRENDIDO
