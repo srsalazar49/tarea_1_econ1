@@ -1,21 +1,29 @@
 %--------- TAREA 1 --------%
-%------- ECONOMETR虯 1 -----%
+%------- ECONOMETR脥A 1 -----%
+%----- Ultima actualizaci贸n: 21/04/2024 16:19------%
 
-%%Caracterizaci髇 para simulaci髇
+clear, clc;
+cd('C:\Users\HP\Documents\MAESTR脥A\1. Primer Semestre\Econometr铆a I\Tareas\Tarea 1')
+
+%%Caracterizaci贸n para simulaci贸n
 beta=[1; 2; 4] %3x1
 N=1000 %Total de personas
 G=40 %Total de grupos
-Ng=N/G %Tama駉 de grupos
+Ng=N/G %Tama帽o de grupos
 
-%%Simulaci髇 de la base
+%%Simulaci贸n de la base
+rng(7)
+
 %Inicializamos matrices donde almacenaremos los datos
-y=zeros(N,1); %Dimensi髇 1000x1
-x1=zeros(N,1); %Dimensi髇 1000x1
-x2=normrnd(5,1,N,1); %Dimensi髇 1000x1
+y=zeros(N,1); %Dimensi贸n 1000x1
+x1=zeros(N,1); %Dimensi贸n 1000x1
+x2=normrnd(5,1,N,1); %Dimensi贸n 1000x1
+i1=ones(N,1);
 
-%Generamos los t閞minos de error del modelo
-epsilon_ig=normrnd(0,1,N,1)  %Dimensi髇 1000x1
-v_g=normrnd(0,1,N,1) %Dimensi髇 1000x1
+%Generamos los t茅rminos de error del modelo
+epsilon_ig=normrnd(0,1,N,1)  %Dimensi贸n 1000x1
+v=normrnd(0,1,G,1)%Errores por grupo Dimensi贸n 40x1
+v_g=repelem(v,N/G) %Dimensi贸n 1000x1, errores repetidos por grupo en vector total
 
 %Llenado de matrices por grupos
 for g= 1:G
@@ -25,6 +33,20 @@ for g= 1:G
     else
         x1((g-1)*Ng+1:g*Ng)=normrnd(5,1,Ng,1);
     end
-    %Calcular el modelo establecido
+    %Calcular el modelo establecido apilando los resultados por grupo en el
+    %vector 1000x1 seg煤n corresponda
     y((g-1)*Ng+1:g*Ng)=beta(1)+beta(2).*x1((g-1).*Ng+1:g*Ng)+beta(3).*x2((g-1)*Ng+1:g*Ng)+epsilon_ig((g-1)*Ng+1:g*Ng)+v_g(g)
 end
+
+%%Pregunta 2: M铆nimos Cuadrados Ordinarios
+%Agrupamos los regresores (intercepto incluido) en esta matriz
+X=[i1 x1 x2]; %Dimensi贸n 1000x3
+[b,ee,t_stat]=OLS(X, y);
+
+%%Errores est谩ndar: 
+%Asumiendo homocedasticidad y ausencia de correlaci贸n
+e_hat=y-X*b %Defino errores
+K=size(X,K) %N煤mero de regresores
+s_sqr=1/(N-K)*(e_hat'*e_hat)
+var_cov=s_sqr*inv(X'*X) %Matriz varianza-covarianza
+se=sqrt(diag(var_cov)) %Errores estandar
