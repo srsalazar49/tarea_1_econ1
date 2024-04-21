@@ -89,24 +89,25 @@ b_mco=inv(x_ig'*x_ig)*(x_ig'*y_ig);
 
 % Pregunta seria: pq dan distinto las dos formas?
 
-%% 3. ERRORES ESTANDAR
+%% 3. ERRORES ESTANDAR (p.136 - 140 / 150 Hansen)
 
 % Vale la pena definir tipo a = x'x; i_a = inv(a) pa simplificar el código?
 
 % 3.1. Homocedasticidad y ausencia de correlacion
 
-r = y_ig - x_ig*b_mco;                  % Residuos mco  
+r = y_ig - x_ig*b_mco;                  % Residuos MCO  
 s2 = (1./(n-3))*(r'*r);                 % Estimador varianza del error s2 = (r'*r)/(n-3)
 mvc = s2*inv(x_ig'*x_ig);               % Matriz varianza covarianza
 ee = sqrt(diag(mvc));                   % Errores estándar 
 
-% 3.2. Robustos (heterocedasticidad) (estimador whites)
+% 3.2. Robustos (heterocedasticidad) 
 
-r = y_ig - x_ig*b_mco;
-om = diag(r.^2);                        % Omega = r^2 en diagonal = representa heterocesasticidad?
-mvc_w = inv(x_ig'*x_ig)*(x_ig'*om*x_ig)*inv(x_ig'*x_ig);      % Matriz de White (var-cov robusta)
-ee_r = sqrt(diag(mvc_w));               % Errores estándar robustos
+r = y_ig - x_ig*b_mco;                 % Residuos MCO 
+d = diag(r.^2);                        % d = matriz diagonal de r^2 
+mvc_w = inv(x_ig'*x_ig)*(x_ig'*d*x_ig)*inv(x_ig'*x_ig);      % Matriz de White (var-cov robusta)
+ee_r = sqrt(diag(mvc_w));              % Errores estándar robustos
 
+$ 3.3. Agrupados (clausterizados) 
 
 
 %% 4. TEST DE HIPOTESIS NULA
