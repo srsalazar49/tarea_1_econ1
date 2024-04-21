@@ -142,9 +142,24 @@ t1 = (R'*b_mco)/sqrt((ee.^2)*R'*inv(x_ig'*x_ig)*R);
 t2 = (R'*b_mco)/sqrt((ee_r.^2)*R'*inv(x_ig'*x_ig)*R);
 t3 = (R'*b_mco)/sqrt((ee_a.^2)*R'*inv(x_ig'*x_ig)*R);
 
-%% 5. MODELO CON EFECTOS FIJOS
+%% 5. MODELO CON EFECTOS FIJOS (p.635 hansen)
 
 % Especificación con efectos fijos: y_ig = b_0 + b_1*x_1ig + b_2*x_2ig + v_g + e_ig
+% Estimador efectos fijos: b = (x'mx)^(-1)(x'my)
+
+y_ig = b(1) + b(2)*x_1ig + b(3)*x_2ig + v_g + e_ig;
+
+% Obtenemos matriz de aniquilación
+P_1 = x_1ig*inv(x_1ig'*x_1ig)*x_1ig';
+P_2 = x_2ig*inv(x_2ig'*x_2ig)*x_2ig';
+
+I = eye(n,n);
+M_1 = I - P_1;
+M_2 = I - P_2;
+
+b1_fe = inv(x_1ig'*M_2*x_1ig)*x_1ig'*M_2*y_ig; 
+b2_fe= inv(x_2ig'*M_1*x_2ig)*x_2ig'*M_1*y_ig;
+
 
 %% 6. FWL Y MODELO DE EFECTOS FIJOS
 
