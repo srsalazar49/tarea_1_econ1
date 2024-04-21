@@ -24,7 +24,7 @@ b = [1, 2, 4];                          % Vector beta
 n = 1000;                               % Número de personas
 g = 40;                                 % Número de grupos
 n_g = n/g;                              % Cantidad de personas por grupo
-rng(23);                                 % Semilla
+rng(14);                                 % Semilla
 
 % Generamos residuo ig y x2
 e_ig = normrnd(0,1,[n, 1]);             %                       (1000x1)           
@@ -77,17 +77,10 @@ y_ig = b(1) + b(2)*x_1ig + b(3)*x_2ig + c_ig;
 
 % Especificación MCO: y_ig = b_0 + b_1*x_1ig + b_2*x_2ig + c_ig
 
-% Obtenemos los estimadores/coeficientes por fórmula
-b_1 = inv(x_1ig'*x_1ig)*(x_1ig'*y_ig);
-b_2 = inv(x_2ig'*x_2ig)*(x_2ig'*y_ig);
-x_0 = ones(n, 1);
-b_0 = inv(x_0'*x_0)*(x_0'*y_ig);                                   
-
-% Alternativa matricial 
+% Estimamos coeficientes
 x_ig = [ones(n, 1), x_1ig, x_2ig];
 b_mco=inv(x_ig'*x_ig)*(x_ig'*y_ig);
 
-% Pregunta seria: pq dan distinto las dos formas?
 
 %% 3. ERRORES ESTANDAR (p.136 - 140 / 150 Hansen)
 
@@ -120,26 +113,14 @@ d = diag(r.^2);                        %
 mvc_a = inv(x_ig'*x_ig)*dg'*d*dg*inv(x_ig'*x_ig);  % Matriz var-cov agrupada
 ee_a = sqrt(diag(mvc_a));
 
-%% 4. TEST DE HIPOTESIS NULA
+%% 4. TEST DE HIPOTESIS NULA (p. 174 hansen)
 
 % H0: b_1 = 1 -> H1: b_1 <> 1
+% Test para los distintos tipos de errores calculados antes 
 
-% Test con ee bajo homocedasticidad
-tt_1 = b_mco(2)/ee(2);
-pv_1 = 2 * (1 - tcdf(abs(tt_1), length(y_ig) - size(x_ig, 2)));
-pv_1 = 2 * (1 - tcdf(abs(tt_1), 997));
-
-% Test con ee robustos
-tt_2 = b_mco(2)/ee_r(2);
-pv_2 = 2 * (1 - tcdf(abs(tt_2), length(y_ig) - size(x_ig, 2))); % o bien comparar con tabla
-
-% Test con ee agrupados
-tt_3 = b_mco(2)/ee_g(2);
-pv_3 = 2 * (1 - tcdf(abs(tt_3), length(y_ig) - size(x_ig, 2)));
-
-% ALTERNATIVA 2
+% Matricialmente como vimos en clases
 R = [0; 1; 0];
-z = tinv(1 - 0.05/2, 997);         % 1.9623
+z = tinv(1 - 0.05/2, 997);         % 1.9623 997 ¿grados de libertad (obs-reg)?
 
 t1 = (R'*b_mco)/sqrt((ee.^2)*R'*inv(x_ig'*x_ig)*R);
 pv1 = 2*(1-t1*1.9623); %??
@@ -150,11 +131,22 @@ pv2 = ;
 t3 = (R'*b_mco)/sqrt((ee_a.^2)*R'*inv(x_ig'*x_ig)*R);
 pv3 = ;
 
+% Alternativamente ttest y pvalue
+tt_1 = b_mco(2)/ee(2);
+pv_1 = 2 * (1 - tcdf(abs(tt_1), length(y_ig) - size(x_ig, 2)));
+
+tt_2 = b_mco(2)/ee_r(2);
+pv_2 = 2 * (1 - tcdf(abs(tt_2), length(y_ig) - size(x_ig, 2))); 
+
+tt_3 = b_mco(2)/ee_g(2);
+pv_3 = 2 * (1 - tcdf(abs(tt_3), length(y_ig) - size(x_ig, 2)));
+
+
 
 %% 5. MODELO CON EFECTOS FIJOS (p.635 hansen)
 
 % Especificación con efectos fijos: y_ig = b_0 + b_1*x_1ig + b_2*x_2ig + v_g + e_ig
-% Estimador efectos fijos: b = (x'mx)^(-1)(x'my)
+% Estimador efectos fijos: b1 = (X'MX)^(-1)(X'MY)
 
 y_ig = b(1) + b(2)*x_1ig + b(3)*x_2ig + v_g + e_ig;
 
@@ -166,12 +158,13 @@ I = eye(n,n);
 M_1 = I - P_1;
 M_2 = I - P_2;
 
+% Estimamos coeficientes
 b1_fe = inv(x_1ig'*M_2*x_1ig)*x_1ig'*M_2*y_ig; 
 b2_fe= inv(x_2ig'*M_1*x_2ig)*x_2ig'*M_1*y_ig;
 
-%% 6. FWL Y MODELO DE EFECTOS FIJOS
+%% 6. FWL Y MODELO DE EFECTOS FIJOS (p. 81 hansen)
 
-% b_1 es el estimador de la regresion de y_1 - y con x_1 - x 
+% Teorema FWL: b_1 es el estimador de la regresion de (y_1 - y) con (x_1 - x= 
 
 % Obtenemos medias de las variables
 Y = mean(y_ig);
@@ -182,7 +175,11 @@ X2 = mean(x_2ig);
 B1 = inv(X1'*X1)*(X1'*Y);
 B2 = inv(X2'*X2)*(X2'*Y);
 
-% No estoy aplicando efectos fijos creo
+% Sgn yo se aplican efectos fijos indirectamente. 
+% En el modelo con efectos fijos teníamos b2_fe= inv(x2'*M1*x2)*x2'*M1*y
+% Por FWL se cumple M1*X2 = X2 - media(X2) y M1*Y = Y - media(Y)
+% Entonces los coeficientes serán 
+            % B2 = inv[(X2-media(X2))'*(X2-media(X2))]*[(X2-media(X2))'*(Y-media(Y))]
 
 
 
@@ -259,7 +256,7 @@ y_ig = b(1) + b(2)*x_1ig + b(3)*x_2ig + c_ig;
 
     % 3.3. Agrupados (clausterizados: indepencia entre grupos no al interior de ellos)
 
-%PENDIENTEEEE
+    %PENDIENTEEEE
 
 % 4. TEST DE HIPOTESIS NULA
 
@@ -293,17 +290,17 @@ y_ig = b(1) + b(2)*x_1ig + b(3)*x_2ig + c_ig;
 
 % 5. Modelo con efectos fijos
 
-y_ig = b(1) + b(2)*x_1ig + b(3)*x_2ig + v_g + e_ig;
+    y_ig = b(1) + b(2)*x_1ig + b(3)*x_2ig + v_g + e_ig;
 
-P_1 = x_1ig*inv(x_1ig'*x_1ig)*x_1ig';
-P_2 = x_2ig*inv(x_2ig'*x_2ig)*x_2ig';
+    P_1 = x_1ig*inv(x_1ig'*x_1ig)*x_1ig';
+    P_2 = x_2ig*inv(x_2ig'*x_2ig)*x_2ig';
 
-I = eye(n,n);
-M_1 = I - P_1;
-M_2 = I - P_2;
+    I = eye(n,n);
+    M_1 = I - P_1;
+    M_2 = I - P_2;
 
-b1_fe = inv(x_1ig'*M_2*x_1ig)*x_1ig'*M_2*y_ig; 
-b2_fe= inv(x_2ig'*M_1*x_2ig)*x_2ig'*M_1*y_ig;
+    b1_fe = inv(x_1ig'*M_2*x_1ig)*x_1ig'*M_2*y_ig; 
+    b2_fe= inv(x_2ig'*M_1*x_2ig)*x_2ig'*M_1*y_ig;
 
 
 %% 8. RESUMA LO APRENDIDO

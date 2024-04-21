@@ -1,6 +1,6 @@
 %--------- TAREA 1 --------%
 %------- ECONOMETRÍA 1 -----%
-%----- Ultima actualización: 21/04/2024 16:19------%
+%---------Última Actualización: 21/04/2024 17:35---------%
 
 clear, clc;
 cd('C:\Users\HP\Documents\MAESTRÍA\1. Primer Semestre\Econometría I\Tareas\Tarea 1')
@@ -12,7 +12,7 @@ G=40 %Total de grupos
 Ng=N/G %Tamaño de grupos
 
 %%Simulación de la base
-rng(7)
+rng(14) 
 
 %Inicializamos matrices donde almacenaremos los datos
 y=zeros(N,1); %Dimensión 1000x1
@@ -46,7 +46,12 @@ X=[i1 x1 x2]; %Dimensión 1000x3
 %%Errores estándar: 
 %Asumiendo homocedasticidad y ausencia de correlación
 e_hat=y-X*b %Defino errores
-K=size(X,K) %Número de regresores
-s_sqr=1/(N-K)*(e_hat'*e_hat)
-var_cov=s_sqr*inv(X'*X) %Matriz varianza-covarianza
+K=size(X,2) %Número de regresores
+s_sqr=1/(N-K)*(e_hat'*e_hat) %Dimensión: 1x1
+var_cov=s_sqr*inv(X'*X) %Matriz varianza-covarianza 3x3
 se=sqrt(diag(var_cov)) %Errores estandar
+%Errores robustos
+e_sqr=e_hat'*e_hat %Dimensión 1x1
+omega=X'*e_sqr*X % (Dimensión 3x3)
+var_cov_white=inv(X'*X)*omega*inv(X'*X)
+se_fitted=sqrt(diag(var_cov_white))
