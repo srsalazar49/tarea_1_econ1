@@ -32,20 +32,10 @@ end
 beta = [1, 2, 4];                       % Vector beta
 n = 1000;                               % Numero de personas
 grupo = 40;                             % Numero de grupos
-n_g = n/grupo;                              % Cantidad de personas por grupo
+n_g = n/grupo;                          % Cantidad de personas por grupo
 
-% Genero residuo ig y x2
-rng(10)
-e_ig = normrnd(0,1,[n, 1]);             %                       (1000x1)           
-x_2ig = normrnd(5,1,[n, 1]);            %                       (1000x1)
-
-% Inicializo matrices
-x_1ig = zeros(n_g, g);                  % X1                      (25x40)  
-y_ig = zeros(n, 1);                     % Y                       (1000x1)
-v = zeros(g,1);                         % v                       (40x1)
-
+% Matriz que guardara los resultados de cada individuo indexados por grupo
 matriz = zeros(n,5); % Matriz que guardara los resultados de cada individuo
-% indexados por grupo
 
 % Generar un loop a nivel de grupo para ir generando todas las variables
 % Se itera por cada grupo y dentro de ello, se itera a nivel de individuo,
@@ -53,54 +43,48 @@ matriz = zeros(n,5); % Matriz que guardara los resultados de cada individuo
 % concatenar
 
 rng(10) % fijando la semilla
-j = 1;
-i = 1;
+j = 1; % variable auxiliar
 for g = 1:grupo
     
-    matriz((j:j+24),1) = g; % indica el grupo de cada individuo
+    % Indexamos a cada individuo por grupo
+    matriz((j:j+24),1) = g;
     
-    % Primero con el error a nivel de grupo
+    % Calculamos el error a nivel de grupo
     v_g = normrnd(0,1);
-    matriz((j:j+24),2) = v_g; % guarda el resultado en la columna 2 de la 
-    % matriz ya que es a nivel de grupo   
+    matriz((j:j+24),2) = v_g'; % guarda el resultado en la columna 2 de la 
+    % matriz
         
-    % Ahora iteramos a nivel de individuo dentro de cada grupo
-    for i = 1:n_g
+    % Calculamos el error individual por grupo
+    epsilon_ig = normrnd(0,1,[1,n_g]);
+    matriz((j:j+24),3) = (epsilon_ig'); % guarda el resultado en la columna 3
         
-        % El error individual
-        epsilon_ig = normrnd(0,1);  
+    % Calculamos el X_{2ig} por grupo
+    x_2ig = normrnd(5,1,[1,n_g]);  
+    matriz((j:j+24),4) = x_2ig';  % guarda el resultado en la columna 4
         
-        matriz(i,3) = epsilon_ig;
-        
-        % El X_{2ig}
-        x_2ig = normrnd(5,1);  
-        matriz(i,4) = [x_2ig];
-        
-        % El X_{1ig} el cual depende del valor de 'v_g'
-        if  v_g < 0                         
-            x_1ig = normrnd(3,1);  
-        else
-            x_1ig = normrnd(5,1);
-        end
-        
-        matriz(i,5) = [x_1ig];
-        
-        i = i+1
-        
+    % Calculamos el X_{1ig} condicional al valor que toma 'v_g'
+    if  v_g < 0      % valores < 0                   
+       x_1ig = normrnd(3,1,[1,n_g]);  
+    else             % valores >= a 0
+       x_1ig = normrnd(5,1,[1,n_g]);
     end
-    
+       
+    matriz((j:j+24),5) = x_1ig';  % guarda el resultado en la columna 5
+        
+    % Para el grupo siguiente, ahora se deben considerar las siguientes 25
+    % personas, por lo que a 'j' se le suma 25 para volver a iterar
     j = j + 25;
 
 end
 
+% Ahora bien, el termino de error del modelo Y_{ig} consider la suma de los
+% errores individuales y grupales, por lo que se puede reescribir como
+% e_{ig} = epislon_{ig} + v_g
+e_ig = matriz(:,3) + matriz(:,2);
 
-
-X1 = reshape(x_1ig,[],1);
-%falta el vercor del v con 1000x1
-
-c_ig = e_ig + v_g;
-
-y_ig = b(1) + b(2)*x_1ig + b(3)*x_2ig + c_ig;
+% Finalmente entonces, el modelo a estimar considera los diferentes betas
+% con los diferentes coeficientes, columnas de la matriz y los errores
+y_ig = beta(1) + beta(2) * matriz(:,5) + beta(3) * matriz(:,4) + e_ig;
 
 %% 1. SUPUESTOS MRL QUE CUMPLEN LOS DATOS SIMULADOS
 
