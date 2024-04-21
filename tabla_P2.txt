@@ -1,0 +1,4 @@
+Var1 Var2
+\beta_0 -0.85
+\beta_1 2.46
+\beta_2 3.98

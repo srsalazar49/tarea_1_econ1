@@ -114,43 +114,45 @@ y_ig = beta(1) + beta(2) * matriz(:,5) + beta(3) * matriz(:,4) + e_ig;
 % la regresion particionada para ello considerando que estamos en presencia
 % de un intercept.
 
-% Por formula betas
-b_1 = inv(x_1ig'*x_1ig)*x_1ig'*y_ig;
-b_2 = inv(x_2ig'*x_2ig)*x_2ig'*y_ig;
+% No olvidar que nuestro modelo consta de lo siguiente:
+% Y_{ig} = \beta_0 + \beta_1 * X_{1ig} + \beta_2 * X_{2ig} + e_{ig}
 
-% Como dice el internet (ya me perdi, cuantos beta hay que sacar?)
-b_mco = zeros(3, g);
+% donde e_{ig} = \epsilon_{ig} + \nu_g
 
-for z = 1:g
-    
-    y = y_ig(:, z) - mean(y_ig(:, z));
-    x_1ig_v2 = x_1ig(:, z) - mean(x_1ig(:, z));
-    x_2ig_v2 = x_2ig(:, z) - mean(x_2ig(:, z));
-    
-    x = [ones(n_g, 1), x_1ig_v2, x_2ig_v2];
-   
-    b_mco(:, z) = inv(x'*x)*x'*y;       % formula matricial beta
-end
+% Podemos aprovechar de la forma matricial de MCO para estimar en este caso
+% los betas
 
-% Formula de regresion particionada
-I = eye(n_g, n_g);
-P_1 = zeros(n_g, n_g);
-P_2 = zeros(n_g, n_g);
-M_1 = zeros(n_g, n_g);
-M_2 = zeros(n_g, n_g);
+% Como tenemos una constante de beta_0, esto es equivalente a que este
+% multiplicara un X = 1, por lo que podemos crear una matriz de Xs el cual
+% contenga en su primera columna una constante
 
-for z = 1:g
+% El Y ya lo tenemos de antes y tiene dimension 1000 x 1, solo le cambiamos
+% el nombre
+Y = y_ig;
+% Ahora generamos la matrix 'X' para estimar los beta de MCO
 
-%hay que ajustar para que se vaya llenando la matriz
-P_1(:, z) = x_1ig*inv(x1_1ig'*x_1ig)*x_1ig';
-P_2(:, z) = x_2ig*inv(x2_1ig'*x_2ig)*x_2ig';
+% Definimos x_0
+x_0 = ones(n, 1);
 
-M_1(:, z) = I - P_1;
-M_2(:, z) = I - P_2;
+% Cambiamos el nombre de los x_1i y x_2i
+X1 = matriz(:,5);
+X2 = matriz(:,4);
 
-b_1 = inv(x_1ig'*M_2*x_1ig)*x_1ig'*M_2*y_ig; %escalares
-b_2 = inv(x_2ig'*M_1*x_2ig)*x_2ig'*M_1*y_ig;
-end
+% Ahora definimos el X que tendra dimension 1000x3
+X = [x_0 X1 X2];
+
+% Calculamos ahora los beta con la funcion de MCO que definimos
+% previamente:
+[beta_gorro] = MCO(Y,X); %calculamos los betas con una funcion que definimos
+
+% Redondeamos los betas para que tengan hasta 3 decimales
+beta_gorro = round(beta_gorro, 2);
+
+% Exportamos los resultados en una tabla
+tabla_P2 = table(['\beta_0';'\beta_1';'\beta_2'],... 
+    [beta_gorro(1);beta_gorro(2); beta_gorro(3)]);
+writetable(tabla_P2,'tabla_P2.txt','Delimiter',' ')  
+type 'tabla_P2.txt'
 
 %% 3. ERRORES ESTANDAR
 

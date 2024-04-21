@@ -95,54 +95,58 @@ y_ig = beta(1) + beta(2) * matriz(:,5) + beta(3) * matriz(:,4) + e_ig;
 % b. X e Y satisfacen Y = X'*beta + e y E(e_g|X) = 0 ya que los grupos son
 % independientes, no obstante, no podemos afirmar que E(e_ig|X) = 0 dado a
 % que hay un termino de error a nivel grupal junto con el hecho de que no
-% hay independencia en la variable 
-
-[E(Y|X) = X'*beta) -> Mejor
-% predictor lineal igual a la esperanza
+% hay independencia en la variable independiente X1. Por ello, 
+% [E(Y|X) = X'*beta) -> Mejor predictor lineal igual a la esperanza a nivel
+% grupal
 % c. Segundos momentos finitos (varianza acotada) E(Y^2)<inf, E||X||^2<inf
-% d. Ausencia de multicolinealidad peftecta -> Q_xx = E(X'X)>0
-% e. Homocedasticidad de los errores -> E(e^2|X) = sigma^2 (varianza cte)
+% d. Ausencia de multicolinealidad perfecta al menos a nivel grupal, podria
+% haber a nivel individual dependiendo; de todas maneras, si se cumple que
+% Q_xx = E(X'X) > 0, no deberia haber multicolinealidad
+% e. Homocedasticidad de los errores, si a nivel grupal, no necesariamente
+% a nivel individual, ya que hay un termino del error que depende del grupo
+% en el pertenece el individuo: E(e^2|X) = sigma^2(X) 
+% (varianza depende del X)
 
 %% 2. COEFICIENTES MCO 
+% Estime los coeficientes de MCO. Interprete sus resultados.
 
-% Por formula betas
-b_1 = inv(x_1ig'*x_1ig)*x_1ig'*y_ig;
-b_2 = inv(x_2ig'*x_2ig)*x_2ig'*y_ig;
+% Ahora debemos calcular los diferentes betas de MCO donde debemos utilizar
+% la regresion particionada para ello considerando que estamos en presencia
+% de un intercept.
 
-% Como dice el internet (ya me perdi, cuantos beta hay que sacar?)
-b_mco = zeros(3, g);
+% No olvidar que nuestro modelo consta de lo siguiente:
+% Y_{ig} = \beta_0 + \beta_1 * X_{1ig} + \beta_2 * X_{2ig} + e_{ig}
 
-for z = 1:g
-    
-    y = y_ig(:, z) - mean(y_ig(:, z));
-    x_1ig_v2 = x_1ig(:, z) - mean(x_1ig(:, z));
-    x_2ig_v2 = x_2ig(:, z) - mean(x_2ig(:, z));
-    
-    x = [ones(n_g, 1), x_1ig_v2, x_2ig_v2];
-   
-    b_mco(:, z) = inv(x'*x)*x'*y;       % formula matricial beta
-end
+% donde e_{ig} = \epsilon_{ig} + \nu_g
 
-% Formula de regresion particionada
-I = eye(n_g, n_g);
-P_1 = zeros(n_g, n_g);
-P_2 = zeros(n_g, n_g);
-M_1 = zeros(n_g, n_g);
-M_2 = zeros(n_g, n_g);
+% Podemos aprovechar de la forma matricial de MCO para estimar en este caso
+% los betas
 
-for z = 1:g
+% Como tenemos una constante de beta_0, esto es equivalente a que este
+% multiplicara un X = 1, por lo que podemos crear una matriz de Xs el cual
+% contenga en su primera columna una constante
 
-%hay que ajustar para que se vaya llenando la matriz
-P_1(:, z) = x_1ig*inv(x1_1ig'*x_1ig)*x_1ig';
-P_2(:, z) = x_2ig*inv(x2_1ig'*x_2ig)*x_2ig';
+% El Y ya lo tenemos de antes y tiene dimension 1000 x 1, solo le cambiamos
+% el nombre
+Y = y_ig;
+% Ahora generamos la matrix 'X' para estimar los beta de MCO
 
-M_1(:, z) = I - P_1;
-M_2(:, z) = I - P_2;
+% Definimos x_0
+x_0 = ones(n, 1);
 
-b_1 = inv(x_1ig'*M_2*x_1ig)*x_1ig'*M_2*y_ig; %escalares
-b_2 = inv(x_2ig'*M_1*x_2ig)*x_2ig'*M_1*y_ig;
-end
+% Cambiamos el nombre de los x_1i y x_2i
+X1 = matriz(:,5);
+X2 = matriz(:,4);
 
+% Ahora definimos el X que tendra dimension 1000x3
+X = [x_0 X1 X2];
+
+% Calculamos ahora los beta con la funcion de MCO que definimos
+% previamente:
+[beta_gorro] = MCO(Y,X); %calculamos los betas con una funcion que definimos
+
+% Exportamos los resultados en una tabla
+tabla_P2 = table(['\beta_0';'\beta_1';'\beta_2'], );
 %% 3. ERRORES ESTANDAR
 
 % 3.1. Homocedasticidad y ausencia de correlacion
