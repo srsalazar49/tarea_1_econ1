@@ -215,6 +215,10 @@ x_1g = accumarray((matriz(:,1)), (matriz(:,5)));
 % Los x_2ig, ahora x_2g
 x_2g = accumarray((matriz(:,1)), (matriz(:,4)));
 
+% El x_0
+x_0aux = [x_0 (matriz(:,1))];
+x_0g = accumarray((x_0aux(:,2)), (x_0aux(:,1)));
+
 % Los y_ig, ahora y_g
 y_aux = [y_ig matriz(:,1)];
 y_g = accumarray((y_aux(:,2)), (y_aux(:,1)));
@@ -223,7 +227,7 @@ y_g = accumarray((y_aux(:,2)), (y_aux(:,1)));
 % cluster
 G = g;
 Y = y_g;
-X = [(ones(g, 1)) x_1g x_2g];
+X = [x_0g x_1g x_2g];
 
 % Estimamos el MCO para tener el error clusterizado
 [beta_gorro, e_gorro] = MCO(Y,X);
