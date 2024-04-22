@@ -8,23 +8,14 @@ clc;clear;
 
 %% 0. SIMULACIÓN DE BASE DE DATOS
 
-% Modelo a estimar:
-% Y_{ig} = \beta_0 + \beta_1 * X_{1ig} + \beta_2 * X_{2ig} + \epsilon_{ig}
-% + \nu_{g}
-
-% Donde:
-% \epsilon_{ig} = N(0,1)
-% \nu_{g} = N(0,1)
-% X_{1ig} = N(3,1) if \nu_{g} < 0
-% X_{1ig} = N(5,1) if \nu_{g} >= 0
-% X_{2ig} = N(5,1)
+% Especificación: Y_ig = b_0 + b_1*X_1ig + b_2*X_2ig + c_ig
 
 % Establecemos parámetros
 b = [1, 2, 4];                          % Vector beta
 n = 1000;                               % Número de personas
 g = 40;                                 % Número de grupos
 n_g = n/g;                              % Cantidad de personas por grupo
-rng(14);                                 % Semilla
+rng(14);                                % Semilla
 
 % Generamos residuo ig y x2
 e_ig = normrnd(0,1,[n, 1]);             %                       (1000x1)           
@@ -36,7 +27,7 @@ y_ig = zeros(n, 1);                     % Y                       (1000x1)
 v = zeros(n_g, 1);                      % v                       (40x1)
 
 % Iteramos para cada grupo el generar su residuo y valores de x1
-% residuos por grupo quedan en vector v(40x1) y x1 por grupo quedan en matriz x_1(25x40)(ixg)
+    % Residuos por grupo quedan en vector v(40x1) y x1 por grupo quedan en matriz x_1(25x40)
 for z = 1:g          
     v(z,1) = normrnd(0,1);         
     if  v(z,1) < 0                         
@@ -67,90 +58,69 @@ y_ig = b(1) + b(2)*x_1ig + b(3)*x_2ig + c_ig;
 
 %% 1. SUPUESTOS MRL QUE CUMPLEN LOS DATOS SIMULADOS
 
-% a. Observaciones vienen de una distribucion comun y son independientes (iid)
-% b. X e Y satisfacen Y = X'*beta + e y E(e|X)=0 [E(Y|X) = X'*beta) -> Mejor predictor lineal igual a la esperanza
-% c. Segundos momentos finitos (varianza acotada) E(Y^2)<inf, E||X||^2<inf
-% d. Ausencia de multicolinealidad peftecta -> Q_xx = E(X'X)>0
-% e. Homocedasticidad de los errores -> E(e^2|X) = sigma^2 (varianza cte)
+% Los supuestos de MRL son:
+    % a. Observaciones vienen de una distribucion comun y son independientes (iid)
+    % b. X e Y satisfacen Y = X'*beta + e y E(e|X)=0 [E(Y|X) = X'*beta) -> Mejor predictor lineal igual a la esperanza
+    % c. Segundos momentos finitos (varianza acotada) E(Y^2)<inf, E||X||^2<inf
+    % d. Ausencia de multicolinealidad peftecta -> Q_xx = E(X'X)>0
+    % e. Homocedasticidad de los errores -> E(e^2|X) = sigma^2 (varianza cte)
 
 %% 2. COEFICIENTES MCO 
 
-% Especificación MCO: y_ig = b_0 + b_1*x_1ig + b_2*x_2ig + c_ig
+% Especificación: y_ig = b_0 + b_1*x_1ig + b_2*x_2ig + c_ig
 
 % Estimamos coeficientes
 x_ig = [ones(n, 1), x_1ig, x_2ig];
-b_mco=inv(x_ig'*x_ig)*(x_ig'*y_ig);
+b_mco = inv(x_ig'*x_ig)*(x_ig'*y_ig);
 
 
 %% 3. ERRORES ESTANDAR (p.136 - 140 / 150 Hansen)
 
-% Vale la pena definir tipo a = x'x; i_a = inv(a) pa simplificar el código?
-
-% 3.1. Homocedasticidad y ausencia de correlacion
-
+% Homocedasticidad y ausencia de correlacion
 r = y_ig - x_ig*b_mco;                  % Residuos MCO  
-s2 = (1./(n-3))*(r'*r);                 % Estimador varianza del error s2 = (r'*r)/(n-3)
+s2 = (1./(n-3))*(r'*r);                 % Estimador varianza del error
 mvc = s2*inv(x_ig'*x_ig);               % Matriz varianza covarianza
 ee = sqrt(diag(mvc));                   % Errores estándar 
 
-% 3.2. Robustos (heterocedasticidad) 
-
+% Robustos (heterocedasticidad) 
 r = y_ig - x_ig*b_mco;                 % Residuos MCO 
 d = diag(r.^2);                        % d = matriz diagonal de r^2 
 mvc_w = inv(x_ig'*x_ig)*(x_ig'*d*x_ig)*inv(x_ig'*x_ig);      % Matriz de White (var-cov robusta)
 ee_r = sqrt(diag(mvc_w));              % Errores estándar robustos
 
-% 3.3. Agrupados (clausterizados: indepencia entre grupos no al interior de ellos)
-
-%PENDIENTEEEE
+% Agrupados (clausterizados: indepencia entre grupos no al interior de ellos)
 grupo = floor((0:size(x_ig, 1)-1) / 25) + 1;     % Indicador de grupo
-grupo = reshape(grupo, [],1);                       
-x = [x_ig, grupo];                               % X con columna de grupo
+grupo = reshape(grupo,[],1);
 
-r = y_ig - x_ig*b_mco;
-dg = dummyvar(grupo);                  % Dummy por grupo
-d = diag(r.^2);                        %
-mvc_a = inv(x_ig'*x_ig)*dg'*d*dg*inv(x_ig'*x_ig);  % Matriz var-cov agrupada
-ee_a = sqrt(diag(mvc_a));
+% Usar el de Nicolas
 
-%% 4. TEST DE HIPOTESIS NULA (p. 174 hansen)
+
+%% 4. TEST DE HIPOTESIS NULA
 
 % H0: b_1 = 1 -> H1: b_1 <> 1
-% Test para los distintos tipos de errores calculados antes 
+% Test t para los distintos tipos de errores calculados antes 
+    % 1000 obs y 3 regresores: 997 grados de libertad
 
-% Matricialmente como vimos en clases
-R = [0; 1; 0];
-z = tinv(1 - 0.05/2, 997);         % 1.9623 997 ¿grados de libertad (obs-reg)?
+% Errores homocedásticos
+tt = (b_mco(2)-1)/ee(2);
+pv = 2 * (1 - tcdf(abs(tt), 997));
 
-t1 = (R'*b_mco)/sqrt((ee.^2)*R'*inv(x_ig'*x_ig)*R);
-pv1 = 2*(1-t1*1.9623); %??
+% Errores robustos
+tt_r = (b_mco(2)-1)/ee_r(2);
+pv_r = 2 * (1 - tcdf(abs(tt_2), 997)); 
 
-t2 = (R'*b_mco)/sqrt((ee_r.^2)*R'*inv(x_ig'*x_ig)*R);
-pv2 = ;
-
-t3 = (R'*b_mco)/sqrt((ee_a.^2)*R'*inv(x_ig'*x_ig)*R);
-pv3 = ;
-
-% Alternativamente ttest y pvalue
-tt_1 = b_mco(2)/ee(2);
-pv_1 = 2 * (1 - tcdf(abs(tt_1), length(y_ig) - size(x_ig, 2)));
-
-tt_2 = b_mco(2)/ee_r(2);
-pv_2 = 2 * (1 - tcdf(abs(tt_2), length(y_ig) - size(x_ig, 2))); 
-
-tt_3 = b_mco(2)/ee_g(2);
-pv_3 = 2 * (1 - tcdf(abs(tt_3), length(y_ig) - size(x_ig, 2)));
-
+% Errores clausterizados
+tt_c = (b_mco(2)-1)/ee_c(2);
+pv_c = 2 * (1 - tcdf(abs(tt_c), 997));
 
 
 %% 5. MODELO CON EFECTOS FIJOS (p.635 hansen)
 
 % Especificación con efectos fijos: y_ig = b_0 + b_1*x_1ig + b_2*x_2ig + v_g + e_ig
-% Estimador efectos fijos: b1 = (X'MX)^(-1)(X'MY)
+% Estimador efectos fijos: b1 = (X'MX)^(-1)(X'MY) [regresión particionada]
 
-y_ig = b(1) + b(2)*x_1ig + b(3)*x_2ig + v_g + e_ig;
-
-% Obtenemos matriz de aniquilación
+% Calculamos matriz de aniquilación (estas hay que recalcularlas por
+% grupo)
 P_1 = x_1ig*inv(x_1ig'*x_1ig)*x_1ig';
 P_2 = x_2ig*inv(x_2ig'*x_2ig)*x_2ig';
 
@@ -159,21 +129,53 @@ M_1 = I - P_1;
 M_2 = I - P_2;
 
 % Estimamos coeficientes
+b0_fe = 
 b1_fe = inv(x_1ig'*M_2*x_1ig)*x_1ig'*M_2*y_ig; 
-b2_fe= inv(x_2ig'*M_1*x_2ig)*x_2ig'*M_1*y_ig;
+b2_fe = inv(x_2ig'*M_1*x_2ig)*x_2ig'*M_1*y_ig;
 
-%% 6. FWL Y MODELO DE EFECTOS FIJOS (p. 81 hansen)
+b_fe = [b0_fe b1_fe b2_fe];
 
-% Teorema FWL: b_1 es el estimador de la regresion de (y_1 - y) con (x_1 - x= 
+% Calculamos errores estándar y test t
 
-% Obtenemos medias de las variables
-Y = mean(y_ig);
-X1 = mean(x_1ig);
-X2 = mean(x_2ig);
+% Homocedásticos 
+r = y_ig - x_ig*b_fe;                   
+s2 = (1./(n-3))*(r'*r);                 
+mvc = s2*inv(x_ig'*x_ig);               
+ee = sqrt(diag(mvc));                   
+
+tt = (b_fe(2)-1)/ee(2);
+pv = 2 * (1 - tcdf(abs(tt_1), 997));
+
+% Robustos
+r = y_ig - x_ig*b_fe;                 
+d = diag(r.^2);                         
+mvc_w = inv(x_ig'*x_ig)*(x_ig'*d*x_ig)*inv(x_ig'*x_ig);     
+ee_r = sqrt(diag(mvc_w));
+
+tt_r = (b_fe(2)-1)/ee_r(2);
+pv_r = 2 * (1 - tcdf(abs(tt_r), 997)); 
+
+% Agrupados
+
+% código errores agrupados
+
+tt_c = (b_fe(2)-1)/ee_c(2);
+pv_c = 2 * (1 - tcdf(abs(tt_c), 997));
+
+
+%% 6. FWL Y MODELO DE EFECTOS FIJOS
+
+% Teorema FWL: b_1 es el estimador de la regresion de (y_1 - y) con (x_1 - x) 
+
+% Obtenemos medias de las variables (estas restas son por grupo)
+Y = y_ig - mean(y_ig);
+X1 = x_1ig - mean(x_1ig);
+X2 = x_2ig - mean(x_2ig);
 
 % Calculamos estimadores
-B1 = inv(X1'*X1)*(X1'*Y);
-B2 = inv(X2'*X2)*(X2'*Y);
+b0_fwl = 
+b1_fwl = inv(X1'*X1)*(X1'*Y);
+b2_fwl = inv(X2'*X2)*(X2'*Y);
 
 % Sgn yo se aplican efectos fijos indirectamente. 
 % En el modelo con efectos fijos teníamos b2_fe= inv(x2'*M1*x2)*x2'*M1*y
@@ -227,71 +229,55 @@ y_ig = b(1) + b(2)*x_1ig + b(3)*x_2ig + c_ig;
 
 % Repetimos desarrollo de preguntas 1. a 5. 
 
-%1. SUPUESTOS MRL QUE CUMPLEN LOS DATOS SIMULADOS
+% 1. SUPUESTOS MRL QUE CUMPLEN LOS DATOS SIMULADOS
 
-    % Teorico
 
 % 2. COEFICIENTES MCO 
 
-    % Especificación MCO: y_ig = b_0 + b_1*x_1ig + b_2*x_2ig + c_ig
-
-    % Estimadores
     x_ig = [ones(n, 1), x_1ig, x_2ig];
-    b_mco=inv(x_ig'*x_ig)*(x_ig'*y_ig);
+    b_mco = inv(x_ig'*x_ig)*(x_ig'*y_ig);
 
-% 3. Errores estándar
-    % 3.1. Homocedasticidad y ausencia de correlacion
 
+% 3. ERRORES ESTANDAR 
+
+    % Homocedásticos
     r = y_ig - x_ig*b_mco;                    
     s2 = (1./(n-3))*(r'*r);                 
     mvc = s2*inv(x_ig'*x_ig);               
-    ee = sqrt(diag(mvc));                    
+    ee = sqrt(diag(mvc));                   
 
-    % 3.2. Robustos (heterocedasticidad) 
-
-    r = y_ig - x_ig*b_mco;                 
+    % Robustos  
+    r = y_ig - x_ig*b_mco;                  
     d = diag(r.^2);                        
     mvc_w = inv(x_ig'*x_ig)*(x_ig'*d*x_ig)*inv(x_ig'*x_ig);      
     ee_r = sqrt(diag(mvc_w));              
 
-    % 3.3. Agrupados (clausterizados: indepencia entre grupos no al interior de ellos)
+    % Agrupados 
 
-    %PENDIENTEEEE
+    grupo = floor((0:size(x_ig, 1)-1) / 25) + 1;    
+    grupo = reshape(grupo,[],1);
+
+    % Usar el de Nicolas
+
 
 % 4. TEST DE HIPOTESIS NULA
 
-    % H0: b_1 = 1 -> H1: b_1 <> 1
+    % Errores homocedásticos
+    tt = (b_mco(2)-1)/ee(2);
+    pv = 2 * (1 - tcdf(abs(tt), 997));
 
-    % Test con ee bajo homocedasticidad
-    tt_1 = b_mco(2)/ee(2);
-    pv_1 = 2 * (1 - tcdf(abs(tt_1), length(y_ig) - size(x_ig, 2)));
-    pv_1 = 2 * (1 - tcdf(abs(tt_1), 997));
+    % Errores robustos
+    tt_r = (b_mco(2)-1)/ee_r(2);
+    pv_r = 2 * (1 - tcdf(abs(tt_2), 997)); 
 
-    % Test con ee robustos
-    tt_2 = b_mco(2)/ee_r(2);
-    pv_2 = 2 * (1 - tcdf(abs(tt_2), length(y_ig) - size(x_ig, 2))); % o bien comparar con tabla
+    % Errores clausterizados
+    tt_c = (b_mco(2)-1)/ee_c(2);
+    pv_c = 2 * (1 - tcdf(abs(tt_c), 997));
 
-    % Test con ee agrupados
-    tt_3 = b_mco(2)/ee_g(2);
-    pv_3 = 2 * (1 - tcdf(abs(tt_3), length(y_ig) - size(x_ig, 2)));
 
-    % ALTERNATIVA 2
-    R = [0; 1; 0];
-    z = tinv(1 - 0.05/2, 997);         % 1.9623
+% 5. MODELO CON EFECTOS FIJOS 
 
-    t1 = (R'*b_mco)/sqrt((ee.^2)*R'*inv(x_ig'*x_ig)*R);
-    pv1 = 2*(1-t1*1.9623); %??
-
-    t2 = (R'*b_mco)/sqrt((ee_r.^2)*R'*inv(x_ig'*x_ig)*R);
-    pv2 = ;
-
-    t3 = (R'*b_mco)/sqrt((ee_a.^2)*R'*inv(x_ig'*x_ig)*R);
-    pv3 = ;
-
-% 5. Modelo con efectos fijos
-
-    y_ig = b(1) + b(2)*x_1ig + b(3)*x_2ig + v_g + e_ig;
-
+    % Matrices de aniquilación
     P_1 = x_1ig*inv(x_1ig'*x_1ig)*x_1ig';
     P_2 = x_2ig*inv(x_2ig'*x_2ig)*x_2ig';
 
@@ -299,8 +285,39 @@ y_ig = b(1) + b(2)*x_1ig + b(3)*x_2ig + c_ig;
     M_1 = I - P_1;
     M_2 = I - P_2;
 
+    % Coeficientes
+    b0_fe = 
     b1_fe = inv(x_1ig'*M_2*x_1ig)*x_1ig'*M_2*y_ig; 
-    b2_fe= inv(x_2ig'*M_1*x_2ig)*x_2ig'*M_1*y_ig;
+    b2_fe = inv(x_2ig'*M_1*x_2ig)*x_2ig'*M_1*y_ig;
+
+    b_fe = [b0_fe b1_fe b2_fe];
+
+    % Errores estándar y test t
+
+    % Homocedásticos 
+    r = y_ig - x_ig*b_fe;                   
+    s2 = (1./(n-3))*(r'*r);                 
+    mvc = s2*inv(x_ig'*x_ig);               
+    ee = sqrt(diag(mvc));                   
+
+    tt = (b_fe(2)-1)/ee(2);
+    pv = 2 * (1 - tcdf(abs(tt_1), 997));
+
+    % Robustos
+    r = y_ig - x_ig*b_fe;                 
+    d = diag(r.^2);                         
+    mvc_w = inv(x_ig'*x_ig)*(x_ig'*d*x_ig)*inv(x_ig'*x_ig);     
+    ee_r = sqrt(diag(mvc_w));
+
+    tt_r = (b_fe(2)-1)/ee_r(2);
+    pv_r = 2 * (1 - tcdf(abs(tt_r), 997)); 
+
+    % Agrupados
+
+    % código errores agrupados
+
+    tt_c = (b_fe(2)-1)/ee_c(2);
+    pv_c = 2 * (1 - tcdf(abs(tt_c), 997));
 
 
 %% 8. RESUMA LO APRENDIDO
