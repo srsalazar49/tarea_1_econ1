@@ -217,7 +217,7 @@ x_2g = accumarray((matriz(:,1)), (matriz(:,4)));
 
 % El x_0
 x_0aux = [x_0 (matriz(:,1))];
-x_0g = accumarray((x_0aux(:2)), (x_0aux(:,1)));
+x_0g = accumarray((x_0aux(:,2)), (x_0aux(:,1)));
 
 % Los y_ig, ahora y_g
 y_aux = [y_ig matriz(:,1)];
@@ -235,6 +235,7 @@ e_cluster = e_gorro;
 
 % Hacemos ahora la estimacion
 [var_cluster, ee_cluster] = errores_cluster(N, K, G, X, e_cluster);
+
 
 %% 4. TEST DE HIPOTESIS NULA
 

@@ -141,10 +141,14 @@ X2 = matriz(:,4);
 % Ahora definimos el X que tendra dimension 1000x3
 X = [x_0 X1 X2];
 
+% Importamos la base de datos para tener una comparacion con Stata
+matrix = [Y X e_ig matriz(:,1)];
+writematrix(matrix,'test.csv') 
+
 % Calculamos ahora los beta con la funcion de MCO que definimos
 % previamente:
 [beta_gorro, e_gorro] = MCO(Y,X); %calculamos los betas con una 
-% funcion que definimos
+% funcion que definimos (me dio lo mismo que Stata)
 
 % Redondeamos los betas para que tengan hasta 3 decimales
 beta_gorro_2 = round(beta_gorro, 2);
@@ -181,7 +185,7 @@ N = n;
 % Luego, corremos la funcion de los errores estandar que estan en funcion
 % de s^2
 [var_bgorro, e_estandar] = errores_estandar(s_2,X);
-
+% (tambien me dio lo mismo que stata)
 
 % 3.2. Errores estandar robustos
 
@@ -190,7 +194,7 @@ N = n;
 % del estimador de la varianza HC1 del Hansen (el que el libro recomienda), 
 % definimos previamente la funcion de ello y lo corremos
 [var_robust, ee_robust] = errores_robustos(N, K ,X, e_gorro);
-
+% (tambien me dio lo mismo que stata)
 
 % 3.3. Errores estandar agrupados
 
@@ -235,6 +239,7 @@ e_cluster = e_gorro;
 
 % Hacemos ahora la estimacion
 [var_cluster, ee_cluster] = errores_cluster(N, K, G, X, e_cluster);
+%(revisar, no me dio lo mismo que cluster pero similar)
 
 %% 4. TEST DE HIPOTESIS NULA
 
