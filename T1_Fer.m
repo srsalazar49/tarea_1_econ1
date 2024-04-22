@@ -107,7 +107,7 @@ pv = 2 * (1 - tcdf(abs(tt), 997));
 
 % Errores robustos
 tt_r = (b_mco(2)-1)/ee_r(2);
-pv_r = 2 * (1 - tcdf(abs(tt_2), 997)); 
+pv_r = 2 * (1 - tcdf(abs(tt_r), 997)); 
 
 % Errores clausterizados
 tt_c = (b_mco(2)-1)/ee_c(2);
@@ -167,15 +167,49 @@ pv_c = 2 * (1 - tcdf(abs(tt_c), 997));
 
 % Teorema FWL: b_1 es el estimador de la regresion de (y_1 - y) con (x_1 - x) 
 
-% Obtenemos desviaciones sobre la media de grupo de las variables
-y = y_ig - accumarray(grupo,y_ig, [], @mean);
-x1 = x_1ig - accumarray(grupo,x_1ig, [], @mean);
-x2 = x_2ig - accumarray(grupo,x_2g, [], @mean);
+% Obtenemos desviaciones sobre la media de grupo de las variables 
+my = accumarray(grupo,y_ig, [], @mean);
+mx1 = accumarray(grupo,x_1ig, [], @mean);
+mx2 = accumarray(grupo,x_2ig, [], @mean);
+
+indx = 1;
+for i = 1:g
+    for j = 1:25
+        ym(indx) = my(i);
+        indx = indx + 1;
+    end
+end
+ym = reshape(ym,[],1);
+
+indx = 1;
+for i = 1:g
+    for j = 1:25
+        x1m(indx) = mx1(i);
+        indx = indx + 1;
+    end
+end
+mx1 = reshape(x1m,[],1);
+
+indx = 1;
+for i = 1:g
+    for j = 1:25
+        x2m(indx) = mx2(i);
+        indx = indx + 1;
+    end
+end
+mx2 = reshape(x2m,[],1);
+
+y = y_ig - ym;
+x1 = x_1ig - mx1;
+x2 = x_2ig - mx2;
 
 % Calculamos estimadores
+x_fwl = [ones(n,1) x1 x2];
+b_fwl = inv(x_fwl'*x_fwl)*(x_fwl'*y);
+
 b0_fwl = 
-b1_fwl = inv(X1'*X1)*(X1'*Y);
-b2_fwl = inv(X2'*X2)*(X2'*Y);
+b1_fwl = inv(x1'*x1)*(x1'*y);
+b2_fwl = inv(x2'*x2)*(x2'*y);
 
 % Sgn yo se aplican efectos fijos indirectamente. 
 % En el modelo con efectos fijos teníamos b2_fe= inv(x2'*M1*x2)*x2'*M1*y
@@ -268,7 +302,7 @@ y_ig = b(1) + b(2)*x_1ig + b(3)*x_2ig + c_ig;
 
     % Errores robustos
     tt_r = (b_mco(2)-1)/ee_r(2);
-    pv_r = 2 * (1 - tcdf(abs(tt_2), 997)); 
+    pv_r = 2 * (1 - tcdf(abs(tt_r), 997)); 
 
     % Errores clausterizados
     tt_c = (b_mco(2)-1)/ee_c(2);
@@ -290,8 +324,7 @@ y_ig = b(1) + b(2)*x_1ig + b(3)*x_2ig + c_ig;
     b1_fe = inv(x_1ig'*M_2*x_1ig)*x_1ig'*M_2*y_ig; 
     b2_fe = inv(x_2ig'*M_1*x_2ig)*x_2ig'*M_1*y_ig;
 
-    b_fe = [b0_fe b1_fe b2_fe];
-
+   
     % Errores estándar y test t
 
     % Homocedásticos 
@@ -301,7 +334,7 @@ y_ig = b(1) + b(2)*x_1ig + b(3)*x_2ig + c_ig;
     ee = sqrt(diag(mvc));                   
 
     tt = (b_fe(2)-1)/ee(2);
-    pv = 2 * (1 - tcdf(abs(tt_1), 997));
+    pv = 2 * (1 - tcdf(abs(tt), 997));
 
     % Robustos
     r = y_ig - x_ig*b_fe;                 
