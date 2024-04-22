@@ -167,10 +167,10 @@ pv_c = 2 * (1 - tcdf(abs(tt_c), 997));
 
 % Teorema FWL: b_1 es el estimador de la regresion de (y_1 - y) con (x_1 - x) 
 
-% Obtenemos medias de las variables (estas restas son por grupo)
-Y = y_ig - mean(y_ig);
-X1 = x_1ig - mean(x_1ig);
-X2 = x_2ig - mean(x_2ig);
+% Obtenemos desviaciones sobre la media de grupo de las variables
+y = y_ig - accumarray(grupo,y_ig, [], @mean);
+x1 = x_1ig - accumarray(grupo,x_1ig, [], @mean);
+x2 = x_2ig - accumarray(grupo,x_2g, [], @mean);
 
 % Calculamos estimadores
 b0_fwl = 
