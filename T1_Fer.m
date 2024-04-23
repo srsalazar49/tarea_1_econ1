@@ -170,49 +170,17 @@ pv_cfe = 2 * (1 - tcdf(abs(tt_cfe), 997));
 % Teorema FWL: b_1 es el estimador de la regresion de (y_1 - y) con (x_1 - x) 
 
 % Obtenemos desviaciones sobre la media de grupo de las variables 
-my = accumarray(grupo,y_ig, [], @mean);
-mx1 = accumarray(grupo,x_1ig, [], @mean);
-mx2 = accumarray(grupo,x_2ig, [], @mean);
+my = accumarray(g_id,y_ig, [], @mean);
+mx1 = accumarray(g_id,x_1ig, [], @mean);
+mx2 = accumarray(g_id,x_2ig, [], @mean);
 
-indx = 1;
-for i = 1:g
-    for j = 1:25
-        ym(indx) = my(i);
-        indx = indx + 1;
-    end
-end
-ym = reshape(ym,[],1);
+y = y_ig - my(g_id);
+x1 = x_1ig - mx1(g_id);
+x2 = x_2ig - mx2(g_id);
 
-indx = 1;
-for i = 1:g
-    for j = 1:25
-        x1m(indx) = mx1(i);
-        indx = indx + 1;
-    end
-end
-mx1 = reshape(x1m,[],1);
-
-indx = 1;
-for i = 1:g
-    for j = 1:25
-        x2m(indx) = mx2(i);
-        indx = indx + 1;
-    end
-end
-mx2 = reshape(x2m,[],1);
-
-y = y_ig - ym;
-x1 = x_1ig - mx1;
-x2 = x_2ig - mx2;
-
-% Calculamos estimadores
 x_fwl = [ones(n,1) x1 x2];
+
 b_fwl = inv(x_fwl'*x_fwl)*(x_fwl'*y);
-
-b0_fwl = 
-b1_fwl = inv(x1'*x1)*(x1'*y);
-b2_fwl = inv(x2'*x2)*(x2'*y);
-
 % Sgn yo se aplican efectos fijos indirectamente. 
 % En el modelo con efectos fijos teníamos b2_fe= inv(x2'*M1*x2)*x2'*M1*y
 % Por FWL se cumple M1*X2 = X2 - media(X2) y M1*Y = Y - media(Y)
