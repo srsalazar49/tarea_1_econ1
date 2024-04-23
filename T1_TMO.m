@@ -253,11 +253,15 @@ M = I - P;
 
 % Dummies por grupo
 Dummy = dummyvar(grupos);
-M_D = M * Dummy
-% Definimos una matriz de 1s de 25, es decir el numero de personas por
-% grupo
-unos = ones(25,1);
-aux = [unos;unos;unos;unos;unos;unos]
+D = diag(Dummy);
+M_D = M * Dummy;
+
+X_aux = [X1 X2 Dummy];
+X = X_aux;
+
+% Calculo del efecto fijo por grupos
+[beta_gorro, e_gorro] = MCO(Y,X);
+% (entrega lo mismo que Stata)
 
 %% 6. FWL Y MODELO DE EFECTOS FIJOS
 
