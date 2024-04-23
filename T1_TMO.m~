@@ -247,16 +247,48 @@ p_value3 = 2 * (1 - tcdf(ttest_3, N-K)); % p-value para 2 colas
 % M = I - P
 
 % Calculamos la proyeccion para el X generico
-P = X(X'*X)^
+P = X * ((X'*X)^(-1))* X';
+I = eye(N);
+M = I - P;
+
 % Dummies por grupo
 Dummy = dummyvar(grupos);
+D = diag(Dummy);
+M_D = M * Dummy;
 
-% Definimos una matriz de 1s de 25, es decir el numero de personas por
-% grupo
-unos = ones(25,1);
-aux = [unos;unos;unos;unos;unos;unos]
+X_aux = [X1 X2 Dummy];
+X = X_aux;
 
+% Calculo del efecto fijo por grupos
+[beta_gorro, e_gorro] = MCO(Y,X);
+% (entrega lo mismo que Stata)
+
+% Falta correr lo de los diferentes errores y ttest que es lo mismo
 %% 6. FWL Y MODELO DE EFECTOS FIJOS
+
+% Parte 1 de FWL
+X1 = 
+% Calculamos matriz de aniquilación 
+unos = ones(N,1);
+P = unos * ((unos' * unos)^(-1)) * unos'; % proyeccion de 1s 
+
+% Aniquilacion
+I = eye(N); 
+M = I - P; % aniquilacion
+m = diag(diag(M)); % Diagonalizacion de aniquilacion
+
+% Modificamos variables
+y_dot = m * y_ig;
+x1_dot = m * X1;
+x2_dot = m * X2;
+
+X = [x_0, x1_dot, x2_dot];
+Y = y_dot;
+[beta_gorro, e_gorro] = MCO(Y,X);
+
+% Calculamos betas
+b_fe = inv(x_dot'*x_dot)*(x_dot'*y_dot);
+
 
 %% 7. REPETICION CON DISTINTA DISTRIBUCION DE X1
 

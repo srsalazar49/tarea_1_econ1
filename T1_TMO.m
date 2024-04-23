@@ -266,55 +266,34 @@ X = X_aux;
 % Falta correr lo de los diferentes errores y ttest que es lo mismo
 %% 6. FWL Y MODELO DE EFECTOS FIJOS
 
-% Como se pudo ver en la parte anterior, el modelo de desviaciones a la
-% media nos genera una regresión de la forma: 
+% Parte 1 de FWL
+% Definimos como X1 la matriz de dummies de cada grupo
+X1 = Dummy;
+% Definimos como X2 la matriz de las 2 variables x_1ig y x_2ig
+X2 = [X(:,2) X(:,3)]; 
 
-% \dot{Y_{ig}} = \beta1\dot{X_{ig}} + \beta_2\dot{X_{2ig}} + \dot{\epsilon_{ig}},
+[beta_1,beta_2] = FWL(Y,X1,X2);
+% Calculamos matriz de aniquilación 
+unos = ones(N,1);
+P = unos * ((unos' * unos)^(-1)) * unos'; % proyeccion de 1s 
 
-% lo cual se parece bastante a una regresión particionada. 
+% Aniquilacion
+I = eye(N); 
+M = I - P; % aniquilacion
+m = diag(diag(M)); % Diagonalizacion de aniquilacion
 
-%  Aplicando el teorema de Frisch-Waugh-Lovell (FWL), tendremos que para X1ig,
-%  se elimina toda la información proveniente de X2ig utilizando la matriz
-%  aniquiladora de X2ig (M2). 
+% Modificamos variables
+y_dot = m * y_ig;
+x1_dot = m * X1;
+x2_dot = m * X2;
 
-P_2 = X2ig_punto*inv(X2ig_punto'*X2ig_punto)*X2ig_punto';       % Matriz proyección.
-M_2 = eye(length(P_2)) - X2ig_punto*inv(X2ig_punto'*X2ig_punto)*X2ig_punto'; % Matriz aniquilación.
+X = [x_0, x1_dot, x2_dot];
+Y = y_dot;
+[beta_gorro, e_gorro] = MCO(Y,X);
 
-beta1_p6 = inv(X1ig_punto'*M_2*X1ig_punto)*X1ig_punto'*M_2*Y_punto    %\hat{\beta_{1}} = =(X_1'M_2X_1)^{-1}X_1'M_2Y
+% Calculamos betas
+b_fe = inv(x_dot'*x_dot)*(x_dot'*y_dot);
 
-e1_tilde = Y_ig - beta1_p6*X_1ig;      
-
-% Para obtener X_2ig: Se elimina toda la información de X_1ig. 
-
-P_1 = X1ig_punto*inv(X1ig_punto'*X1ig_punto)*X1ig_punto';       % Matriz proyección.
-M_1 = eye(length(P_2)) - X1ig_punto*inv(X1ig_punto'*X1ig_punto)*X1ig_punto'; % Matriz aniquilación.
-
-beta2_p6 = inv(X2ig_punto'*M_1*X2ig_punto)*X2ig_punto'*M_1*Y_punto 
-
-beta_fwg = [beta1_p6, beta2_p6]';
-
-% Comparación:
-
-display(beta_ef);
-display(beta_fwg);
-
-% Dado que \beta_1 = 2.07 y \beta_1 = 1.4 es el mismo con ambos procedimientos, el resultado con ambas
-% metodologías equivalente. Esto podría deberse a que: ....
-
-
-
-% Nota:
-% ***** Habría que pensar por qué el teorema de FWG elimina el efecto por
-% grupos (v_g) y la constante (b_0), para que podamos pensar que la
-% regresión particionada por FWG y la regresión por desviaciones a la media
-% es la misma. 
-
-% Nota 2:
-% Tambien tendríamos que pensar por qué b_2 difiere bastante de 4 al
-% incluir efectos fijos. Quizás podría ser que eliminar el 1 de la
-% constante, y eliminar el error por grupo sesga el resultado. Igualmente,
-% en el enunciado solo te piden testear b_1, que supongo es la variable de
-% interés relevante. 
 
 %% 7. REPETICION CON DISTINTA DISTRIBUCION DE X1
 
