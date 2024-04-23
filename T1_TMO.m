@@ -242,6 +242,22 @@ p_value3 = 2 * (1 - tcdf(ttest_3, N-K)); % p-value para 2 colas
 
 %% 5. MODELO CON EFECTOS FIJOS
 
+% Requiere que agreguemos la matriz de aniquilacion ahora para cada X
+% M = I - X(X'X)^-1 X'
+% M = I - P
+
+% Calculamos la proyeccion para el X generico
+P = X * ((X'*X)^(-1))* X';
+I = eye(N);
+M = I - P;
+
+% Dummies por grupo
+Dummy = dummyvar(grupos);
+M_D = M * Dummy
+% Definimos una matriz de 1s de 25, es decir el numero de personas por
+% grupo
+unos = ones(25,1);
+aux = [unos;unos;unos;unos;unos;unos]
 
 %% 6. FWL Y MODELO DE EFECTOS FIJOS
 
