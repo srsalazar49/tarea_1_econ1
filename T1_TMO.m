@@ -204,42 +204,22 @@ N = n;
 % para estimar a Y nuevamente.
 
 % Lista de los diferentes grupos
-grupos = unique(matriz(:,1));
+grupos = matriz(:,1);
 
-% Dejando los valores unicos de v_g por grupo
-v_g2 = unique(matriz(:,2));
-
-% Agrupamos ahora las demas variables
-% Partiendo por epsilon_ig que ahora es epsilon_g
-epsilon_g = accumarray((matriz(:,1)), (matriz(:,3)));
-
-% Siguiendo con los x_1ig, ahora x_1g
-x_1g = accumarray((matriz(:,1)), (matriz(:,5)));
-
-% Los x_2ig, ahora x_2g
-x_2g = accumarray((matriz(:,1)), (matriz(:,4)));
-
-% El x_0
-x_0aux = [x_0 (matriz(:,1))];
-x_0g = accumarray((x_0aux(:,2)), (x_0aux(:,1)));
-
-% Los y_ig, ahora y_g
-y_aux = [y_ig matriz(:,1)];
-y_g = accumarray((y_aux(:,2)), (y_aux(:,1)));
-
-% Definimos los errores cluster a partir de la estimacion del beta ahora en
-% cluster
+% Definimos ahora el numero de clusters
 G = g;
-Y = y_g;
-X = [x_0g x_1g x_2g];
 
-% Estimamos el MCO para tener el error clusterizado
-[beta_gorro, e_gorro] = MCO(Y,X);
-e_cluster = e_gorro;
+% Clusterizamos el error ahora considerando los X originales y los residuos
+e_cluster = zeros(G,K);
 
-% Hacemos ahora la estimacion
+% Generamos un loop para que clusterice los errores por grupo
+for j = 1:K
+    e_cluster(:,j) = accumarray(grupos, (X(:,j))'.*e_gorro');
+end
+
+% Hacemos ahora la estimacion de los errores estandar robustos
 [var_cluster, ee_cluster] = errores_cluster(N, K, G, X, e_cluster);
-%(revisar, no me dio lo mismo que cluster pero similar)
+
 
 %% 4. TEST DE HIPOTESIS NULA
 

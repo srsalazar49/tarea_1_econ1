@@ -3,14 +3,8 @@
 
 function [var_cluster, ee_cluster] = errores_cluster(N, K, G, X, e_cluster)
 
-% Calculamos primero los errores al cuadrado
-e_cluster2 = e_cluster.^2;
-
-% Luego, calculamos sigma2
-Sigma = diag(e_cluster2);
-
-% Luego, calculamos omega a partir de Sigma
-omega = X' * Sigma * X;
+% Calculamos omega a partir de los errores clusterizados estimados antes
+omega = e_cluster' * e_cluster;
 
 % Calculamos ahora el parametro que escala la varianza
 A = ((N - 1)/(N - K)) * ((G)/(G - 1));

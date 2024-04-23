@@ -141,10 +141,14 @@ X2 = matriz(:,4);
 % Ahora definimos el X que tendra dimension 1000x3
 X = [x_0 X1 X2];
 
+% Importamos la base de datos para tener una comparacion con Stata
+matrix = [Y X e_ig matriz(:,1)];
+writematrix(matrix,'test.csv') 
+
 % Calculamos ahora los beta con la funcion de MCO que definimos
 % previamente:
 [beta_gorro, e_gorro] = MCO(Y,X); %calculamos los betas con una 
-% funcion que definimos
+% funcion que definimos (me dio lo mismo que Stata)
 
 % Redondeamos los betas para que tengan hasta 3 decimales
 beta_gorro_2 = round(beta_gorro, 2);
@@ -181,7 +185,7 @@ N = n;
 % Luego, corremos la funcion de los errores estandar que estan en funcion
 % de s^2
 [var_bgorro, e_estandar] = errores_estandar(s_2,X);
-
+% (tambien me dio lo mismo que stata)
 
 % 3.2. Errores estandar robustos
 
@@ -190,7 +194,7 @@ N = n;
 % del estimador de la varianza HC1 del Hansen (el que el libro recomienda), 
 % definimos previamente la funcion de ello y lo corremos
 [var_robust, ee_robust] = errores_robustos(N, K ,X, e_gorro);
-
+% (tambien me dio lo mismo que stata)
 
 % 3.3. Errores estandar agrupados
 
@@ -200,17 +204,17 @@ N = n;
 % para estimar a Y nuevamente.
 
 % Lista de los diferentes grupos
-grupos = unique(matriz(:,1));
+grupos = matriz(:,1);
 
 % Dejando los valores unicos de v_g por grupo
 v_g2 = unique(matriz(:,2));
 
 % Agrupamos ahora las demas variables
 % Partiendo por epsilon_ig que ahora es epsilon_g
-epsilon_g = accumarray((matriz(:,1)), (matriz(:,3)));
+epsilon_g = accumarray(grupos, (matriz(:,3)));
 
 % Siguiendo con los x_1ig, ahora x_1g
-x_1g = accumarray((matriz(:,1)), (matriz(:,5)));
+x_1g = accumarray(grupos, (matriz(:,5)));
 
 % Los x_2ig, ahora x_2g
 x_2g = accumarray((matriz(:,1)), (matriz(:,4)));
@@ -229,13 +233,16 @@ G = g;
 Y = y_g;
 X = [x_0g x_1g x_2g];
 
-% Estimamos el MCO para tener el error clusterizado
-[beta_gorro, e_gorro] = MCO(Y,X);
-e_cluster = e_gorro;
+% Clusterizamos el error anterior que ya considera el epsilon y el nu
+e_cluster = zeros(G,K);
+e_gorro
+for j = 1:K
+    e_cluster(:,j) = accumarray(grupos, (X(:,j))'.*e_gorro);
+end
 
 % Hacemos ahora la estimacion
 [var_cluster, ee_cluster] = errores_cluster(N, K, G, X, e_cluster);
-
+%(revisar, no me dio lo mismo que cluster pero similar)
 
 %% 4. TEST DE HIPOTESIS NULA
 
