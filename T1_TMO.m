@@ -263,7 +263,58 @@ X = X_aux;
 [beta_gorro, e_gorro] = MCO(Y,X);
 % (entrega lo mismo que Stata)
 
+% Falta correr lo de los diferentes errores y ttest que es lo mismo
 %% 6. FWL Y MODELO DE EFECTOS FIJOS
+
+% Como se pudo ver en la parte anterior, el modelo de desviaciones a la
+% media nos genera una regresión de la forma: 
+
+% \dot{Y_{ig}} = \beta1\dot{X_{ig}} + \beta_2\dot{X_{2ig}} + \dot{\epsilon_{ig}},
+
+% lo cual se parece bastante a una regresión particionada. 
+
+%  Aplicando el teorema de Frisch-Waugh-Lovell (FWL), tendremos que para X1ig,
+%  se elimina toda la información proveniente de X2ig utilizando la matriz
+%  aniquiladora de X2ig (M2). 
+
+P_2 = X2ig_punto*inv(X2ig_punto'*X2ig_punto)*X2ig_punto';       % Matriz proyección.
+M_2 = eye(length(P_2)) - X2ig_punto*inv(X2ig_punto'*X2ig_punto)*X2ig_punto'; % Matriz aniquilación.
+
+beta1_p6 = inv(X1ig_punto'*M_2*X1ig_punto)*X1ig_punto'*M_2*Y_punto    %\hat{\beta_{1}} = =(X_1'M_2X_1)^{-1}X_1'M_2Y
+
+e1_tilde = Y_ig - beta1_p6*X_1ig;      
+
+% Para obtener X_2ig: Se elimina toda la información de X_1ig. 
+
+P_1 = X1ig_punto*inv(X1ig_punto'*X1ig_punto)*X1ig_punto';       % Matriz proyección.
+M_1 = eye(length(P_2)) - X1ig_punto*inv(X1ig_punto'*X1ig_punto)*X1ig_punto'; % Matriz aniquilación.
+
+beta2_p6 = inv(X2ig_punto'*M_1*X2ig_punto)*X2ig_punto'*M_1*Y_punto 
+
+beta_fwg = [beta1_p6, beta2_p6]';
+
+% Comparación:
+
+display(beta_ef);
+display(beta_fwg);
+
+% Dado que \beta_1 = 2.07 y \beta_1 = 1.4 es el mismo con ambos procedimientos, el resultado con ambas
+% metodologías equivalente. Esto podría deberse a que: ....
+
+
+
+% Nota:
+% ***** Habría que pensar por qué el teorema de FWG elimina el efecto por
+% grupos (v_g) y la constante (b_0), para que podamos pensar que la
+% regresión particionada por FWG y la regresión por desviaciones a la media
+% es la misma. 
+
+% Nota 2:
+% Tambien tendríamos que pensar por qué b_2 difiere bastante de 4 al
+% incluir efectos fijos. Quizás podría ser que eliminar el 1 de la
+% constante, y eliminar el error por grupo sesga el resultado. Igualmente,
+% en el enunciado solo te piden testear b_1, que supongo es la variable de
+% interés relevante. 
 
 %% 7. REPETICION CON DISTINTA DISTRIBUCION DE X1
 
