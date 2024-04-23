@@ -270,30 +270,43 @@ X = X_aux;
 % Definimos como X1 la matriz de dummies de cada grupo
 X1 = Dummy;
 % Definimos como X2 la matriz de las 2 variables x_1ig y x_2ig
-X2 = [X(:,2) X(:,3)]; 
+X2 = [matriz(:,5) matriz(:,4)]; 
 
+% Llamamos la funcion de regresion particionada
 [beta_1,beta_2] = FWL(Y,X1,X2);
-% Calculamos matriz de aniquilación 
-unos = ones(N,1);
-P = unos * ((unos' * unos)^(-1)) * unos'; % proyeccion de 1s 
 
-% Aniquilacion
-I = eye(N); 
-M = I - P; % aniquilacion
-m = diag(diag(M)); % Diagonalizacion de aniquilacion
+% Hacemos lo mismo ahora pero considerando la diferencia de medias
+% Calculando las medias:
 
-% Modificamos variables
-y_dot = m * y_ig;
-x1_dot = m * X1;
-x2_dot = m * X2;
+yig_mean = accumarray(grupos, y_ig, [], @mean); % cluster mean y_ig
+x1ig_mean = accumarray(grupos, (matriz(:,5)), [], @mean);  % cluster mean x_1ig
+x2ig_mean = accumarray(grupos, (matriz(:,4)), [], @mean); % cluster mean x_2ig
 
-X = [x_0, x1_dot, x2_dot];
-Y = y_dot;
+% Calculamos las desviaciones en torno a la media (within transformation) 
+% para cada variable.
+y_punto = y_ig - yig_mean(grupos);    
+x1ig_punto = (matriz(:,5)) - x1ig_mean(grupos);
+x2ig_punto = (matriz(:,4)) - x2ig_mean(grupos);
+
+% Definimos ahora las variables para estimar por MCO
+X = [x1ig_punto, x2ig_punto]; % sin constante ya que su desviacion a la media es 0
+Y = y_punto;
+
+% Corremos el MCO
 [beta_gorro, e_gorro] = MCO(Y,X);
 
-% Calculamos betas
-b_fe = inv(x_dot'*x_dot)*(x_dot'*y_dot);
+% Obtenemos desviaciones sobre la media de grupo de las variables 
+my = accumarray(grupos, y_ig, [], @mean);
+mx1 = accumarray(grupos,(matriz(:,5)), [], @mean);
+mx2 = accumarray(grupos,(matriz(:,4)), [], @mean);
 
+Y = y_ig - my(grupos);
+x1 = (matriz(:,5)) - mx1(grupos);
+x2 = (matriz(:,4)) - mx2(grupos);
+
+X = [x1 x2];
+
+b_fwl = inv(x_fwl'*x_fwl)*(x_fwl'*y);
 
 %% 7. REPETICION CON DISTINTA DISTRIBUCION DE X1
 
