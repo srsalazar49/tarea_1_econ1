@@ -194,7 +194,7 @@ b_fwl = inv(x_fwl'*x_fwl)*(x_fwl'*y);
 % Definimos ahora a w_i como una uniforme entre 0,1 para definir ahora a
 % X_ig de nuevo
 
-% Copiamos la matriz
+% Copiamos la matriz 
 
 
 

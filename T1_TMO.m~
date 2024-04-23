@@ -296,6 +296,7 @@ Y = y_punto;
 [beta_gorro, e_gorro] = MCO(Y,X);
 
 % Obtenemos desviaciones sobre la media de grupo de las variables 
+% Comprobamos que lo de la Fer da lo mismo
 my = accumarray(grupos, y_ig, [], @mean);
 mx1 = accumarray(grupos,(matriz(:,5)), [], @mean);
 mx2 = accumarray(grupos,(matriz(:,4)), [], @mean);
@@ -306,9 +307,82 @@ x2 = (matriz(:,4)) - mx2(grupos);
 
 X = [x1 x2];
 
-b_fwl = inv(x_fwl'*x_fwl)*(x_fwl'*y);
+% Corremos el MCO
+[beta_gorro, e_gorro] = MCO(Y,X);
 
 %% 7. REPETICION CON DISTINTA DISTRIBUCION DE X1
+
+% Repetimos nuevamente todo el procedimiento de la 1 cambiando ahora como
+% se define el x_1ig
+clc;clear;
+
+% Parametros
+beta = [1, 2, 4];                       % Vector beta
+n = 1000;                               % Numero de personas
+grupo = 40;                             % Numero de grupos
+n_g = n/grupo;                          % Cantidad de personas por grupo
+
+% Matriz que guardara los resultados de cada individuo indexados por grupo
+matriz = zeros(n,6); % Matriz que guardara los resultados de cada individuo
+
+% Generar un loop a nivel de grupo para ir generando todas las variables
+% Se itera por cada grupo y dentro de ello, se itera a nivel de individuo,
+% cada resultado se guarda en una matriz diferente que luego se van a
+% concatenar
+
+rng(14) % fijando la semilla
+j = 1; % variable auxiliar
+for g = 1:grupo
+    
+    % Indexamos a cada individuo por grupo
+    matriz((j:j+24),1) = g;
+    
+    % Calculamos el error a nivel de grupo
+    v_g = normrnd(0,1);
+    matriz((j:j+24),2) = v_g'; % guarda el resultado en la columna 2 de la 
+    % matriz
+        
+    % Calculamos el error individual por grupo
+    epsilon_ig = normrnd(0,1,[1,n_g]);
+    matriz((j:j+24),3) = epsilon_ig'; % guarda el resultado en la columna 3
+        
+    % Calculamos el X_{2ig} por grupo
+    x_2ig = normrnd(5,1,[1,n_g]);  
+    matriz((j:j+24),4) = x_2ig';  % guarda el resultado en la columna 4
+end
+
+% Calculamos ahora el w_i
+w_i = unifrnd(0,1,[n,1]); 
+matriz(:,5) = w_i;
+
+j = 1;
+x = zeros(n,1);
+% Hacemos un loop para ahora calcular a x_1ig
+for i = 1:n
+    
+    % Calculamos el X_{1ig} condicional al valor que toma 'w_i'
+    if  w_i < 0.5      % valores < 0.5                   
+       x_1ig = normrnd(3,1);  
+    else             % valores >= a 0.5
+       x_1ig = normrnd(5,1);
+    end
+       
+    x(i,1) = x_1ig;  % guarda el resultado en la columna 6
+    j = j+1;
+end
+
+matriz(:,6) = x;
+
+% Ahora bien, el termino de error del modelo Y_{ig} consider la suma de los
+% errores individuales y grupales, por lo que se puede reescribir como
+% e_{ig} = epislon_{ig} + v_g
+e_ig = matriz(:,3) + matriz(:,2);
+
+% Finalmente entonces, el modelo a estimar considera los diferentes betas
+% con los diferentes coeficientes, columnas de la matriz y los errores
+y_ig = beta(1) + beta(2) * matriz(:,5) + beta(3) * matriz(:,4) + e_ig;
+
+% A partir de esto, todas las variables tienen dimensiones de (1000x1)
 
 %% 8. RESUMA LO APRENDIDO
 
