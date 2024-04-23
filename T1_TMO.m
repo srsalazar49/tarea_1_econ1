@@ -147,7 +147,7 @@ writematrix(matrix,'test.csv')
 
 % Calculamos ahora los beta con la funcion de MCO que definimos
 % previamente:
-[beta_gorro, e_gorro] = MCO(Y,X); %calculamos los betas con una 
+[beta_gorro] = MCO(Y,X); %calculamos los betas con una 
 % funcion que definimos (me dio lo mismo que Stata)
 
 % Redondeamos los betas para que tengan hasta 3 decimales
@@ -219,9 +219,26 @@ end
 
 % Hacemos ahora la estimacion de los errores estandar robustos
 [var_cluster, ee_cluster] = errores_cluster(N, K, G, X, e_cluster);
-
+% (entrega el mismo valor que stata)
 
 %% 4. TEST DE HIPOTESIS NULA
+
+% Quiero testar la hipotesis beta_1 = 1, entonces mi matriz R debe ser:
+R = [0 1 0];
+
+% Entonces, probamos los diferentes test t con los diferentes errores
+% Errores estandar 
+ttest_1 = abs(((R * beta_gorro) - 1)/(e_estandar(2)));
+p_value1 = 2 * (1 - tcdf(ttest_1, N-K)); % p-value para 2 colas
+
+% Errores robustos
+ttest_2 = abs(((R * beta_gorro) - 1)/(ee_robust(2)));
+p_value2 = 2 * (1 - tcdf(ttest_2, N-K)); % p-value para 2 colas
+
+% Errores clusters
+ttest_3 = abs(((R * beta_gorro) - 1)/(ee_cluster(2)));
+p_value3 = 2 * (1 - tcdf(ttest_3, N-K)); % p-value para 2 colas
+
 
 %% 5. MODELO CON EFECTOS FIJOS
 
