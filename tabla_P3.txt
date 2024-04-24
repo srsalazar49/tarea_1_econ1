@@ -1,0 +1,4 @@
+"Error Estandar" "Error Robusto" "Error Clusterizado"
+0.2281 0.2310 0.3153
+0.0280 0.0270 0.0573
+0.0398 0.0423 0.0388

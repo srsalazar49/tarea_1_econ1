@@ -178,6 +178,23 @@ end
 [var_cluster, ee_cluster] = errores_cluster(N, K, G, X, e_cluster);
 display(ee_cluster)
 
+% Creamos ahora una tabla que exporta los resultados acordes
+ee_values = [ee_estandar']; 
+ee_values_str = arrayfun(@(x) num2str(x, '%.4f'), ee_values, 'UniformOutput', false);
+
+er_values = [ee_robust'];
+er_values_str = arrayfun(@(x) num2str(x, '%.4f'), er_values, 'UniformOutput', false);
+
+ec_values = [ee_cluster']; 
+ec_values_str = arrayfun(@(x) num2str(x, '%.4f'), ec_values, 'UniformOutput', false);
+
+% Creamos la tabla y exportamos
+tabla_P3 = table(ee_values_str', er_values_str', ec_values_str',...
+    'VariableNames', {'Error Estandar'; 'Error Robusto'; 'Error Clusterizado'});
+writetable(tabla_P3, 'tabla_P3.txt', 'FileType', 'text',...
+    'WriteRowNames', true, 'Delimiter',' ');
+type 'tabla_P3.txt'
+
 %% 4. TEST DE HIPOTESIS NULA
 
 % Queremos testar ahora la hipotesis de beta_1 = 2, por lo que la matriz R 
@@ -187,16 +204,16 @@ c = 2; % este es el valor de la hipotesis a testear
 
 % Entonces, hacemos los diferentes test-t para los diferentes errores
 % Errores estandar 
-ttest_1 = abs(((R * beta_gorro) - c)/(ee_estandar(2)));
-p_value1 = 2 * (1 - tcdf(ttest_1, N - K)); % p-value para 2 colas
+ttest_1 = ((R * beta_gorro) - c)/(ee_estandar(2));
+p_value1 = 2 * (1 - tcdf(abs(ttest_1), N - K)); % p-value para 2 colas
 
 % Errores robustos
-ttest_2 = abs(((R * beta_gorro) - c)/(ee_robust(2)));
-p_value2 = 2 * (1 - tcdf(ttest_2, N - K)); % p-value para 2 colas
+ttest_2 = ((R * beta_gorro) - c)/(ee_robust(2));
+p_value2 = 2 * (1 - tcdf(abs(ttest_2), N - K)); % p-value para 2 colas
 
 % Errores clusters
-ttest_3 = abs(((R * beta_gorro) - c)/(ee_cluster(2)));
-p_value3 = 2 * (1 - tcdf(ttest_3, N - K)); % p-value para 2 colas
+ttest_3 = ((R * beta_gorro) - c)/(ee_cluster(2));
+p_value3 = 2 * (1 - tcdf(abs(ttest_3), N - K)); % p-value para 2 colas
 
 % Matriz con los estadisticos t
 ttest = [ttest_1 ttest_2 ttest_3];
@@ -207,6 +224,20 @@ p_value = [p_value1 p_value2 p_value3];
 % Mostrando los resultados
 display(ttest)
 display(p_value)
+
+% Creamos ahora una tabla que exporta los resultados acordes
+ttest_values = [ttest']; 
+ttest_values_str = arrayfun(@(x) num2str(x, '%.4f'), ttest_values, 'UniformOutput', false);
+
+p_values = [p_value'];
+p_values_str = arrayfun(@(x) num2str(x, '%.4f'), p_values, 'UniformOutput', false);
+
+% Creamos la tabla y exportamos
+tabla_P4 = table(ttest_values_str', p_values_str',...
+    'VariableNames', {'Test-T'; 'P-Values'});
+writetable(tabla_P4, 'tabla_P4.txt', 'FileType', 'text',...
+    'WriteRowNames', true, 'Delimiter',' ');
+type 'tabla_P4.txt'
 
 %% 5. MODELO CON EFECTOS FIJOS
 
@@ -223,6 +254,17 @@ X = [X_1ig X_2ig Dummy];
 
 % Calculamos ahora el MCO, el cual considera el efecto fijo por grupo
 [beta_gorro, e_gorro] = MCO(Y,X);
+
+% Creamos tabla que ahora exporta los betas
+betas_FE = [beta_gorro']; 
+betas_FE_str = arrayfun(@(x) num2str(x, '%.4f'), betas_FE, 'UniformOutput', false);
+
+% Exportamos ahora los resultados en una tabla
+tabla_P5_betas = table(betas_FE_str,...
+    'VariableNames', {'\beta'});
+writetable(tabla_P5_betas, 'tabla_P5_betas.txt', 'FileType', 'text',...
+    'WriteRowNames', true, 'Delimiter',' ');
+type 'tabla_P5_betas.txt'
 
 % Calculamos ahora nuevamente los diferentes tipos de error:
 % Error estandar
@@ -246,22 +288,39 @@ end
 [var_cluster, ee_cluster] = errores_cluster(N, K, G, X, e_cluster);
 display(ee_cluster)
 
+% Creamos tabla que ahora exporte los resultados de los errores
+ee_values = [ee_estandar']; 
+ee_values_str = arrayfun(@(x) num2str(x, '%.4f'), ee_values, 'UniformOutput', false);
+
+er_values = [ee_robust'];
+er_values_str = arrayfun(@(x) num2str(x, '%.4f'), er_values, 'UniformOutput', false);
+
+ec_values = [ee_cluster']; 
+ec_values_str = arrayfun(@(x) num2str(x, '%.4f'), ec_values, 'UniformOutput', false);
+
+% Creamos la tabla y exportamos
+tabla_P5_errores = table(ee_values_str', er_values_str', ec_values_str',...
+    'VariableNames', {'Error Estandar'; 'Error Robusto'; 'Error Clusterizado'});
+writetable(tabla_P5_errores, 'tabla_P5_errores.txt', 'FileType', 'text',...
+    'WriteRowNames', true, 'Delimiter',' ');
+type 'tabla_P5_errores.txt'
+
 % Testamos ahora nuevamente la hipotesis nula 
 % Definimos nuevamente a R
 R = [1 zeros(1,41)];
 c = 2; % valor del test
 
 % Errores estandar 
-ttest_1 = abs(((R * beta_gorro) - c)/(ee_estandar(2)));
-p_value1 = 2 * (1 - tcdf(ttest_1, N - K)); % p-value para 2 colas
+ttest_1 = ((R * beta_gorro) - c)/(ee_estandar(2));
+p_value1 = 2 * (1 - tcdf(abs(ttest_1), N - K)); % p-value para 2 colas
 
 % Errores robustos
-ttest_2 = abs(((R * beta_gorro) - c)/(ee_robust(2)));
-p_value2 = 2 * (1 - tcdf(ttest_2, N - K)); % p-value para 2 colas
+ttest_2 = ((R * beta_gorro) - c)/(ee_robust(2));
+p_value2 = 2 * (1 - tcdf(abs(ttest_2), N - K)); % p-value para 2 colas
 
 % Errores clusters
-ttest_3 = abs(((R * beta_gorro) - c)/(ee_cluster(2)));
-p_value3 = 2 * (1 - tcdf(ttest_3, N - K)); % p-value para 2 colas
+ttest_3 = ((R * beta_gorro) - c)/(ee_cluster(2));
+p_value3 = 2 * (1 - tcdf(abs(ttest_3), N - K)); % p-value para 2 colas
 
 % Matriz con los estadisticos t
 ttest = [ttest_1 ttest_2 ttest_3];
@@ -272,6 +331,20 @@ p_value = [p_value1 p_value2 p_value3];
 % Mostrando los resultados
 display(ttest)
 display(p_value)
+
+% Creamos ahora la tabla para exportar los resultados
+ttest_values = [ttest']; 
+ttest_values_str = arrayfun(@(x) num2str(x, '%.4f'), ttest_values, 'UniformOutput', false);
+
+p_values = [p_value'];
+p_values_str = arrayfun(@(x) num2str(x, '%.4f'), p_values, 'UniformOutput', false);
+
+% Creamos la tabla y exportamos
+tabla_P5_ttest = table(ttest_values_str', p_values_str',...
+    'VariableNames', {'Test-T'; 'P-Values'});
+writetable(tabla_P5_ttest, 'tabla_P5_ttest.txt', 'FileType', 'text',...
+    'WriteRowNames', true, 'Delimiter',' ');
+type 'tabla_P5_ttest.txt'
 
 %% 6. FWL Y MODELO DE EFECTOS FIJOS
 
@@ -288,6 +361,29 @@ X2 = [X_1ig X_2ig];
 [beta_1,beta_2] = FWL(Y,X1,X2);
 display(beta_1)
 display(beta_2)
+
+% Creamos tabla y exportamos ahora los betas
+betas_FE = [beta_1']; 
+betas_FE_str = arrayfun(@(x) num2str(x, '%.4f'), betas_FE, 'UniformOutput', false);
+
+betas_X = [beta_2']; 
+betas_X_str = arrayfun(@(x) num2str(x, '%.4f'), betas_X, 'UniformOutput', false);
+
+% Exportamos ahora los resultados en una tabla
+% Beta1
+tabla_P6_beta1 = table(betas_FE_str,...
+    'VariableNames', {'\beta_FE'});
+writetable(tabla_P6_beta1, 'tabla_P6_beta1.txt', 'FileType', 'text',...
+    'WriteRowNames', true, 'Delimiter',' ');
+type 'tabla_P6_beta1.txt'
+
+% Beta2
+tabla_P6_beta2 = table(betas_X_str,...
+    'VariableNames', {'\beta_X'});
+writetable(tabla_P6_beta2, 'tabla_P6_beta2.txt', 'FileType', 'text',...
+    'WriteRowNames', true, 'Delimiter',' ');
+type 'tabla_P6_beta2.txt'
+
 
 % Ahora hacemos lo mismo ahora pero considerando la desviacion de medias
 % Calculando las medias:
@@ -306,6 +402,17 @@ X = [x1 x2];
 % Corremos el MCO
 [beta_gorro, e_gorro] = MCO(Y,X);
 display(beta_gorro)
+
+% Exportamos ahora los betas de dif. de medias
+betas_difm = [beta_gorro']; 
+betas_difm_str = arrayfun(@(x) num2str(x, '%.4f'), betas_difm, 'UniformOutput', false);
+
+% Exportamos ahora los resultados en una tabla
+tabla_P6_difm = table(betas_difm_str,...
+    'VariableNames', {'\beta'});
+writetable(tabla_P6_difm, 'tabla_P6_difm.txt', 'FileType', 'text',...
+    'WriteRowNames', true, 'Delimiter',' ');
+type 'tabla_P6_difm.txt'
 
 
 %% 7. REPETICION CON DISTINTA DISTRIBUCION DE X1
@@ -421,6 +528,25 @@ end
 [var_cluster,ee_cluster] = errores_cluster(N, K, G, X, e_cluster);
 display(ee_cluster)
 
+% Exportamos ahora los resultados de los errores
+% Creamos tabla que ahora exporte los resultados de los errores
+ee_values = [ee_estandar']; 
+ee_values_str = arrayfun(@(x) num2str(x, '%.4f'), ee_values, 'UniformOutput', false);
+
+er_values = [ee_robust'];
+er_values_str = arrayfun(@(x) num2str(x, '%.4f'), er_values, 'UniformOutput', false);
+
+ec_values = [ee_cluster']; 
+ec_values_str = arrayfun(@(x) num2str(x, '%.4f'), ec_values, 'UniformOutput', false);
+
+% Creamos la tabla y exportamos
+tabla_P7_errores = table(ee_values_str', er_values_str', ec_values_str',...
+    'VariableNames', {'Error Estandar'; 'Error Robusto'; 'Error Clusterizado'});
+writetable(tabla_P7_errores, 'tabla_P7_errores.txt', 'FileType', 'text',...
+    'WriteRowNames', true, 'Delimiter',' ');
+type 'tabla_P7_errores.txt'
+
+
 % Calculamos los testt respectivos
 % Hipotesis de beta_1 = 2, por lo que la matriz R 
 % debe ser:
@@ -450,6 +576,20 @@ p_value = [p_value1 p_value2 p_value3];
 display(ttest)
 display(p_value)
 
+% Creamos ahora la tabla para exportar los resultados
+ttest_values = [ttest']; 
+ttest_values_str = arrayfun(@(x) num2str(x, '%.4f'), ttest_values, 'UniformOutput', false);
+
+p_values = [p_value'];
+p_values_str = arrayfun(@(x) num2str(x, '%.4f'), p_values, 'UniformOutput', false);
+
+% Exportamos ahora los ttest
+tabla_P7_ttest = table(ttest_values_str', p_values_str',...
+    'VariableNames', {'Test-T'; 'P-Values'});
+writetable(tabla_P7_ttest, 'tabla_P7_ttest.txt', 'FileType', 'text',...
+    'WriteRowNames', true, 'Delimiter',' ');
+type 'tabla_P7_ttest.txt'
+
 % Agregamos ahora los efectos fijos por grupo a la estimacion y repetimos
 % todo nuevamente
 Dummy = dummyvar(grupos); % creamos matriz de dummies
@@ -457,6 +597,15 @@ X = [X_1ig X_2ig Dummy]; % definimos el X de nuevo
 
 % Calculamos nuevamente el MCO
 [beta_gorro, e_gorro] = MCO(Y,X);
+
+% Exportamos los resultados de los beta
+betas_FE = [beta_gorro']; 
+betas_FE_str = arrayfun(@(x) num2str(x, '%.4f'), betas_FE, 'UniformOutput', false);
+tabla_P7_b_FE = table(betas_FE_str,...
+    'VariableNames', {'\beta'});
+writetable(tabla_P7_b_FE, 'tabla_P7_b_FE.txt', 'FileType', 'text',...
+    'WriteRowNames', true, 'Delimiter',' ');
+type 'tabla_P7_b_FE.txt'
 
 % Calculamos ahora nuevamente los diferentes tipos de error:
 % Error estandar
@@ -478,6 +627,23 @@ for j = 1:K
 end
 [var_cluster, ee_cluster] = errores_cluster(N, K, G, X, e_cluster);
 display(ee_cluster)
+
+% Creamos tabla que ahora exporte los resultados de los errores
+ee_values = [ee_estandar']; 
+ee_values_str = arrayfun(@(x) num2str(x, '%.4f'), ee_values, 'UniformOutput', false);
+
+er_values = [ee_robust'];
+er_values_str = arrayfun(@(x) num2str(x, '%.4f'), er_values, 'UniformOutput', false);
+
+ec_values = [ee_cluster']; 
+ec_values_str = arrayfun(@(x) num2str(x, '%.4f'), ec_values, 'UniformOutput', false);
+
+% Creamos la tabla y exportamos
+tabla_P7_errores_FE = table(ee_values_str', er_values_str', ec_values_str',...
+    'VariableNames', {'Error Estandar'; 'Error Robusto'; 'Error Clusterizado'});
+writetable(tabla_P7_errores_FE, 'tabla_P7_errores_FE.txt', 'FileType', 'text',...
+    'WriteRowNames', true, 'Delimiter',' ');
+type 'tabla_P7_errores_FE.txt'
 
 % Testamos ahora nuevamente la hipotesis nula con efecto fijo
 % Definimos nuevamente a R
@@ -505,3 +671,18 @@ p_value = [p_value1 p_value2 p_value3];
 % Mostrando los resultados
 display(ttest)
 display(p_value)
+
+% Creamos ahora la tabla para exportar los resultados
+ttest_values = [ttest']; 
+ttest_values_str = arrayfun(@(x) num2str(x, '%.4f'), ttest_values, 'UniformOutput', false);
+
+p_values = [p_value'];
+p_values_str = arrayfun(@(x) num2str(x, '%.4f'), p_values, 'UniformOutput', false);
+
+% Creamos la tabla y exportamos
+tabla_P7_ttest_FE = table(ttest_values_str', p_values_str',...
+    'VariableNames', {'Test-T'; 'P-Values'});
+writetable(tabla_P7_ttest_FE, 'tabla_P7_ttest_FE.txt', 'FileType', 'text',...
+    'WriteRowNames', true, 'Delimiter',' ');
+type 'tabla_P7_ttest_FE.txt'
+
