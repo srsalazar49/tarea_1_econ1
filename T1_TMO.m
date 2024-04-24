@@ -247,20 +247,21 @@ end
 [var_cluster, ee_cluster] = errores_cluster(N, K, G, X, e_cluster);
 display(ee_cluster)
 
-% Testamos ahora nuevamente la hipotesis nula
+% Testamos ahora nuevamente la hipotesis nula 
 % Definimos nuevamente a R
 R = [1 zeros(1,41)];
+c = 2; % valor del test
 
 % Errores estandar 
-ttest_1 = abs(((R * beta_gorro) - 1)/(ee_estandar(2)));
+ttest_1 = abs(((R * beta_gorro) - c)/(ee_estandar(2)));
 p_value1 = 2 * (1 - tcdf(ttest_1, N - K)); % p-value para 2 colas
 
 % Errores robustos
-ttest_2 = abs(((R * beta_gorro) - 1)/(ee_robust(2)));
+ttest_2 = abs(((R * beta_gorro) - c)/(ee_robust(2)));
 p_value2 = 2 * (1 - tcdf(ttest_2, N - K)); % p-value para 2 colas
 
 % Errores clusters
-ttest_3 = abs(((R * beta_gorro) - 1)/(ee_cluster(2)));
+ttest_3 = abs(((R * beta_gorro) - c)/(ee_cluster(2)));
 p_value3 = 2 * (1 - tcdf(ttest_3, N - K)); % p-value para 2 colas
 
 % Matriz con los estadisticos t
@@ -429,6 +430,62 @@ R = [0 1 0];
 c = 2; % hipotesis a testear
 
 % Incluimos ahora los efectos fijos
+% Errores estandar 
+ttest_1 = abs(((R * beta_gorro) - c)/(ee_estandar(2)));
+p_value1 = 2 * (1 - tcdf(ttest_1, N - K)); % p-value para 2 colas
+
+% Errores robustos
+ttest_2 = abs(((R * beta_gorro) - c)/(ee_robust(2)));
+p_value2 = 2 * (1 - tcdf(ttest_2, N - K)); % p-value para 2 colas
+
+% Errores clusters
+ttest_3 = abs(((R * beta_gorro) - c)/(ee_cluster(2)));
+p_value3 = 2 * (1 - tcdf(ttest_3, N - K)); % p-value para 2 colas
+
+% Matriz con los estadisticos t
+ttest = [ttest_1 ttest_2 ttest_3];
+
+% Matriz con los p-value
+p_value = [p_value1 p_value2 p_value3];
+
+% Mostrando los resultados
+display(ttest)
+display(p_value)
+
+% Agregamos ahora los efectos fijos por grupo a la estimacion y repetimos
+% todo nuevamente
+Dummy = dummyvar(grupos); % creamos matriz de dummies
+X = [X_1ig X_2ig Dummy]; % definimos el X de nuevo
+
+% Calculamos nuevamente el MCO
+[beta_gorro, e_gorro] = MCO(Y,X);
+
+% Calculamos ahora nuevamente los diferentes tipos de error:
+% Error estandar
+[K,s_2] = s2(N, beta_gorro, e_gorro);
+[var_bgorro, ee_estandar] = errores_estandar(s_2,X);
+display(ee_estandar)
+
+% Error robusto
+[var_robust, ee_robust] = errores_robustos(N, K ,X, e_gorro);
+display(ee_robust)
+
+% Error clusterizado
+% Clusterizamos el error
+e_cluster = zeros(G,K);
+
+% Generamos un loop para que clusterice los errores por grupo
+for j = 1:K
+    e_cluster(:,j) = accumarray(grupos, (X(:,j))'.*e_gorro');
+end
+[var_cluster, ee_cluster] = errores_cluster(N, K, G, X, e_cluster);
+display(ee_cluster)
+
+% Testamos ahora nuevamente la hipotesis nula con efecto fijo
+% Definimos nuevamente a R
+R = [1 zeros(1,41)];
+c = 2; % valor del test
+
 % Errores estandar 
 ttest_1 = abs(((R * beta_gorro) - c)/(ee_estandar(2)));
 p_value1 = 2 * (1 - tcdf(ttest_1, N - K)); % p-value para 2 colas
