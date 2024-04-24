@@ -4,72 +4,77 @@
 % ----------------------------------------------------------------------- %
 
 %% Agregando los directorios por usuario
+
 clc;clear;
 
 % Path Tamara
-if strcmp(char(java.lang.System.getProperty('user.name')),'tamaramunoz')==1
-    data='/Users/tamaramunoz/Desktop/1st semester ME/Econometría I/Tarea/Main/';
+if strcmp(char(java.lang.System.getProperty('user.name')),'tamaramunoz') ==1
+    data ='/Users/tamaramunoz/Desktop/1st semester ME/Econometría I/Tarea/Main/';
     
 % Path Fernanda 
-elseif strcmp(char(java.lang.System.getProperty('user.name')),'ferna')==1
-    data='C:\Users\ferna\Desktop\ME_Otoño 2024\Econometría I\Tarea 1'; 
+elseif strcmp(char(java.lang.System.getProperty('user.name')),'ferna') ==1
+    data ='C:\Users\ferna\Desktop\ME_Otoño 2024\Econometría I\Tarea 1'; 
+    
+% Path Romulo
+elseif strcmp(char(java.lang.System.getProperty('user.name')),'HP') ==1
+    data ='C:\Users\HP\Documents\MAESTRÍA\1. Primer Semestre\Econometría I\Tareas\Tarea 1';
 end
 
 %% 0. SIMULACIÓN DE BASE DE DATOS
 
 % Modelo a estimar:
-% Y_{ig} = \beta_0 + \beta_1 * X_{1ig} + \beta_2 * X_{2ig} + \epsilon_{ig}
-% + \nu_{g}
+% Y_ig = beta_0 + beta_1 * X_1ig + beta_2 * X_2ig + epsilon_ig + nu_g
 
 % Donde:
-% \epsilon_{ig} = N(0,1)
-% \nu_{g} = N(0,1)
-% X_{1ig} = N(3,1) if \nu_{g} < 0
-% X_{1ig} = N(5,1) if \nu_{g} >= 0
-% X_{2ig} = N(5,1)
+% epsilon_ig = N(0,1)
+% nu_g = N(0,1)
+% X_1ig = N(3,1) if nu_g < 0
+% X_1ig = N(5,1) if nu_g >= 0
+% X_2ig = N(5,1)
 
-% Parametros
+% Definimos los parametros iniciales
 beta = [1, 2, 4];                       % Vector beta
-n = 1000;                               % Numero de personas
+N = 1000;                               % Numero de personas
 grupo = 40;                             % Numero de grupos
-n_g = n/grupo;                          % Cantidad de personas por grupo
+n_g = N/grupo;                          % Cantidad de personas por grupo
 
-% Matriz que guardara los resultados de cada individuo indexados por grupo
-matriz = zeros(n,5); % Matriz que guardara los resultados de cada individuo
+% Definimos una matriz auxiliar que guardara los resultados de cada individuo 
+% indexados por grupo, luego definiremos por separado los vectores
+% correspondientes a cada variable.
+matriz = zeros(N,5); 
 
-% Generar un loop a nivel de grupo para ir generando todas las variables
-% Se itera por cada grupo y dentro de ello, se itera a nivel de individuo,
-% cada resultado se guarda en una matriz diferente que luego se van a
-% concatenar
+
+% Generaramos un loop a nivel de grupo para ir creando todas las variables.
+% Se itera por cada grupo y dentro de ello, se itera a nivel de individuo.
 
 rng(14) % fijando la semilla
 j = 1; % variable auxiliar
+
 for g = 1:grupo
     
     % Indexamos a cada individuo por grupo
-    matriz((j:j+24),1) = g;
+    matriz((j:j+24),1) = g; % columna 1
     
     % Calculamos el error a nivel de grupo
-    v_g = normrnd(0,1);
-    matriz((j:j+24),2) = v_g'; % guarda el resultado en la columna 2 de la 
-    % matriz
-        
+    v_g = normrnd(0,1); 
+    matriz((j:j+24),2) = v_g'; % columna 2
+    
     % Calculamos el error individual por grupo
     epsilon_ig = normrnd(0,1,[1,n_g]);
-    matriz((j:j+24),3) = epsilon_ig'; % guarda el resultado en la columna 3
+    matriz((j:j+24),3) = epsilon_ig'; % columna 3
         
-    % Calculamos el X_{2ig} por grupo
+    % Calculamos el X_2ig por grupo
     x_2ig = normrnd(5,1,[1,n_g]);  
-    matriz((j:j+24),4) = x_2ig';  % guarda el resultado en la columna 4
+    matriz((j:j+24),4) = x_2ig';  % columna 4
         
-    % Calculamos el X_{1ig} condicional al valor que toma 'v_g'
+    % Calculamos el X_1ig condicional al valor que toma 'v_g'
     if  v_g < 0      % valores < 0                   
        x_1ig = normrnd(3,1,[1,n_g]);  
     else             % valores >= a 0
        x_1ig = normrnd(5,1,[1,n_g]);
     end
        
-    matriz((j:j+24),5) = x_1ig';  % guarda el resultado en la columna 5
+    matriz((j:j+24),5) = x_1ig';  % columna 5
         
     % Para el grupo siguiente, ahora se deben considerar las siguientes 25
     % personas, por lo que a 'j' se le suma 25 para volver a iterar
@@ -77,35 +82,21 @@ for g = 1:grupo
 
 end
 
-% Ahora bien, el termino de error del modelo Y_{ig} consider la suma de los
+% Ahora bien, el termino de error del modelo Y_ig consider la suma de los
 % errores individuales y grupales, por lo que se puede reescribir como
-% e_{ig} = epislon_{ig} + v_g
+% e_ig = epislon_ig + v_g
 e_ig = matriz(:,3) + matriz(:,2);
 
-% Finalmente entonces, el modelo a estimar considera los diferentes betas
-% con los diferentes coeficientes, columnas de la matriz y los errores
-y_ig = beta(1) + beta(2) * matriz(:,5) + beta(3) * matriz(:,4) + e_ig;
+% Dejamos en 2 matrices separados los X_1ig y X_2ig calculados
+% anteriormente
+X_1ig = matriz(:,5);
+X_2ig = matriz(:,4);
 
-% A partir de esto, todas las variables tienen dimensiones de (1000x1)
+% Finalmente estimamos el modelo inicial con los betas verdaderos
+y_ig = beta(1) + beta(2) * X_1ig + beta(3) * X_2ig + e_ig;
 
-%% 1. SUPUESTOS MRL QUE CUMPLEN LOS DATOS SIMULADOS
-
-% a. Observaciones vienen de una distribucion comun y son independientes 
-% (iid) entre grupos, pero no entre todas las observaciones
-% b. X e Y satisfacen Y = X'*beta + e y E(e_g|X) = 0 ya que los grupos son
-% independientes, no obstante, no podemos afirmar que E(e_ig|X) = 0 dado a
-% que hay un termino de error a nivel grupal junto con el hecho de que no
-% hay independencia en la variable independiente X1. Por ello, 
-% [E(Y|X) = X'*beta) -> Mejor predictor lineal igual a la esperanza a nivel
-% grupal
-% c. Segundos momentos finitos (varianza acotada) E(Y^2)<inf, E||X||^2<inf
-% d. Ausencia de multicolinealidad perfecta al menos a nivel grupal, podria
-% haber a nivel individual dependiendo; de todas maneras, si se cumple que
-% Q_xx = E(X'X) > 0, no deberia haber multicolinealidad
-% e. Homocedasticidad de los errores, si a nivel grupal, no necesariamente
-% a nivel individual, ya que hay un termino del error que depende del grupo
-% en el pertenece el individuo: E(e^2|X) = sigma^2(X) 
-% (varianza depende del X)
+% A partir de esto, todas las variables tienen dimensiones de (1000x1),
+% salvo los beta que tienen dimension (3x1)
 
 %% 2. COEFICIENTES MCO 
 % Estime los coeficientes de MCO. Interprete sus resultados.

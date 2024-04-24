@@ -4,65 +4,70 @@
 % ----------------------------------------------------------------------- %
 
 %% Agregando los directorios por usuario
+
 clc;clear;
 
 % Path Tamara
-if strcmp(char(java.lang.System.getProperty('user.name')),'tamaramunoz')==1
-    data='/Users/tamaramunoz/Desktop/1st semester ME/Econometría I/Tarea/Main/';
+if strcmp(char(java.lang.System.getProperty('user.name')),'tamaramunoz') ==1
+    data ='/Users/tamaramunoz/Desktop/1st semester ME/Econometría I/Tarea/Main/';
     
 % Path Fernanda 
-elseif strcmp(char(java.lang.System.getProperty('user.name')),'ferna')==1
-    data='C:\Users\ferna\Desktop\ME_Otoño 2024\Econometría I\Tarea 1'; 
+elseif strcmp(char(java.lang.System.getProperty('user.name')),'ferna') ==1
+    data ='C:\Users\ferna\Desktop\ME_Otoño 2024\Econometría I\Tarea 1'; 
+    
+% Path Romulo
+elseif strcmp(char(java.lang.System.getProperty('user.name')),'HP') ==1
+    data ='C:\Users\HP\Documents\MAESTRÍA\1. Primer Semestre\Econometría I\Tareas\Tarea 1';
 end
 
 %% 0. SIMULACIÓN DE BASE DE DATOS
 
 % Modelo a estimar:
-% Y_{ig} = \beta_0 + \beta_1 * X_{1ig} + \beta_2 * X_{2ig} + \epsilon_{ig}
-% + \nu_{g}
+% Y_ig = beta_0 + beta_1 * X_1ig + beta_2 * X_2ig + epsilon_ig + nu_g
 
 % Donde:
-% \epsilon_{ig} = N(0,1)
-% \nu_{g} = N(0,1)
-% X_{1ig} = N(3,1) if \nu_{g} < 0
-% X_{1ig} = N(5,1) if \nu_{g} >= 0
-% X_{2ig} = N(5,1)
+% epsilon_ig = N(0,1)
+% nu_g = N(0,1)
+% X_1ig = N(3,1) if nu_g < 0
+% X_1ig = N(5,1) if nu_g >= 0
+% X_2ig = N(5,1)
 
-% Parametros
+% Definimos los parametros iniciales
 beta = [1, 2, 4];                       % Vector beta
-n = 1000;                               % Numero de personas
+N = 1000;                               % Numero de personas
 grupo = 40;                             % Numero de grupos
-n_g = n/grupo;                          % Cantidad de personas por grupo
+n_g = N/grupo;                          % Cantidad de personas por grupo
 
-% Matriz que guardara los resultados de cada individuo indexados por grupo
-matriz = zeros(n,5); % Matriz que guardara los resultados de cada individuo
+% Definimos una matriz auxiliar que guardara los resultados de cada individuo 
+% indexados por grupo, luego definiremos por separado los vectores
+% correspondientes a cada variable.
+matriz = zeros(N,5); 
 
-% Generar un loop a nivel de grupo para ir generando todas las variables
-% Se itera por cada grupo y dentro de ello, se itera a nivel de individuo,
-% cada resultado se guarda en una matriz diferente que luego se van a
-% concatenar
+
+% Generaramos un loop a nivel de grupo para ir creando todas las variables.
+% Se itera por cada grupo y dentro de ello, se itera a nivel de individuo.
 
 rng(14) % fijando la semilla
 j = 1; % variable auxiliar
+
 for g = 1:grupo
     
     % Indexamos a cada individuo por grupo
-    matriz((j:j+24),1) = g;
+    matriz((j:j+24),1) = g; % columna 1
     
     % Calculamos el error a nivel de grupo
-    v_g = normrnd(0,1);
-    matriz((j:j+24),2) = v_g'; % guarda el resultado en la columna 2 de la 
-    % matriz
-        
+    v_g = normrnd(0,1); 
+    matriz((j:j+24),2) = v_g'; % columna 2
+    
     % Calculamos el error individual por grupo
     epsilon_ig = normrnd(0,1,[1,n_g]);
-    matriz((j:j+24),3) = epsilon_ig'; % guarda el resultado en la columna 3
+    matriz((j:j+24),3) = epsilon_ig'; % columna 3
         
-    % Calculamos el X_{2ig} por grupo
+    % Calculamos el X_2ig por grupo
     x_2ig = normrnd(5,1,[1,n_g]);  
-    matriz((j:j+24),4) = x_2ig';  % guarda el resultado en la columna 4
+    matriz((j:j+24),4) = x_2ig';  % columna 4
         
-    % Calculamos el X_{1ig} condicional al valor que toma 'v_g'
+    % Calculamos el X_1ig condicional al valor que toma 'v_g'
     if  v_g < 0      % valores < 0                   
        x_1ig = normrnd(3,1,[1,n_g]);  
     else             % valores >= a 0
@@ -323,7 +328,7 @@ grupo = 40;                             % Numero de grupos
 n_g = n/grupo;                          % Cantidad de personas por grupo
 
 % Matriz que guardara los resultados de cada individuo indexados por grupo
-matriz = zeros(n,6); % Matriz que guardara los resultados de cada individuo
+matriz = zeros(n,4); % Matriz que guardara los resultados de cada individuo
 
 % Generar un loop a nivel de grupo para ir generando todas las variables
 % Se itera por cada grupo y dentro de ello, se itera a nivel de individuo,
@@ -353,7 +358,6 @@ end
 
 % Calculamos ahora el w_i
 w_i = unifrnd(0,1,[n,1]); 
-matriz(:,5) = w_i;
 
 j = 1;
 x = zeros(n,1);
@@ -371,7 +375,6 @@ for i = 1:n
     j = j+1;
 end
 
-matriz(:,6) = x;
 
 % Ahora bien, el termino de error del modelo Y_{ig} consider la suma de los
 % errores individuales y grupales, por lo que se puede reescribir como
@@ -380,11 +383,9 @@ e_ig = matriz(:,3) + matriz(:,2);
 
 % Finalmente entonces, el modelo a estimar considera los diferentes betas
 % con los diferentes coeficientes, columnas de la matriz y los errores
-y_ig = beta(1) + beta(2) * matriz(:,5) + beta(3) * matriz(:,4) + e_ig;
+y_ig = beta(1) + beta(2) * x + beta(3) * matriz(:,4) + e_ig;
 
 % A partir de esto, todas las variables tienen dimensiones de (1000x1)
 
-%% 8. RESUMA LO APRENDIDO
 
-% Está fucking larga la tarea
 
