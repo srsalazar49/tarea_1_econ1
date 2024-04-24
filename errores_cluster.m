@@ -1,5 +1,5 @@
-% Definimos una funcion de los errores cluster, escalado por como lo
-% sugiere el Hansen
+% Definimos una funcion de los errores cluster, utilizando la definicion
+% del Hansen
 
 function [var_cluster, ee_cluster] = errores_cluster(N, K, G, X, e_cluster)
 

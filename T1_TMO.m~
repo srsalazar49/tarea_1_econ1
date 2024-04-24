@@ -74,7 +74,7 @@ for g = 1:grupo
        x_1ig = normrnd(5,1,[1,n_g]);
     end
        
-    matriz((j:j+24),5) = x_1ig';  % guarda el resultado en la columna 5
+    matriz((j:j+24),5) = x_1ig';  % columna 5
         
     % Para el grupo siguiente, ahora se deben considerar las siguientes 25
     % personas, por lo que a 'j' se le suma 25 para volver a iterar
@@ -82,133 +82,87 @@ for g = 1:grupo
 
 end
 
-% Ahora bien, el termino de error del modelo Y_{ig} consider la suma de los
+% Ahora bien, el termino de error del modelo Y_ig consider la suma de los
 % errores individuales y grupales, por lo que se puede reescribir como
-% e_{ig} = epislon_{ig} + v_g
+% e_ig = epislon_ig + v_g
 e_ig = matriz(:,3) + matriz(:,2);
 
-% Finalmente entonces, el modelo a estimar considera los diferentes betas
-% con los diferentes coeficientes, columnas de la matriz y los errores
-y_ig = beta(1) + beta(2) * matriz(:,5) + beta(3) * matriz(:,4) + e_ig;
+% Dejamos en 2 matrices separados los X_1ig y X_2ig calculados
+% anteriormente
+X_1ig = matriz(:,5);
+X_2ig = matriz(:,4);
 
-% A partir de esto, todas las variables tienen dimensiones de (1000x1)
+% Finalmente estimamos el modelo inicial con los betas verdaderos
+y_ig = beta(1) + beta(2) * X_1ig + beta(3) * X_2ig + e_ig;
 
-%% 1. SUPUESTOS MRL QUE CUMPLEN LOS DATOS SIMULADOS
-
-% a. Observaciones vienen de una distribucion comun y son independientes 
-% (iid) entre grupos, pero no entre todas las observaciones
-% b. X e Y satisfacen Y = X'*beta + e y E(e_g|X) = 0 ya que los grupos son
-% independientes, no obstante, no podemos afirmar que E(e_ig|X) = 0 dado a
-% que hay un termino de error a nivel grupal junto con el hecho de que no
-% hay independencia en la variable independiente X1. Por ello, 
-% [E(Y|X) = X'*beta) -> Mejor predictor lineal igual a la esperanza a nivel
-% grupal
-% c. Segundos momentos finitos (varianza acotada) E(Y^2)<inf, E||X||^2<inf
-% d. Ausencia de multicolinealidad perfecta al menos a nivel grupal, podria
-% haber a nivel individual dependiendo; de todas maneras, si se cumple que
-% Q_xx = E(X'X) > 0, no deberia haber multicolinealidad
-% e. Homocedasticidad de los errores, si a nivel grupal, no necesariamente
-% a nivel individual, ya que hay un termino del error que depende del grupo
-% en el pertenece el individuo: E(e^2|X) = sigma^2(X) 
-% (varianza depende del X)
+% A partir de esto, todas las variables tienen dimensiones de (1000x1),
+% salvo los beta que tienen dimension (3x1)
 
 %% 2. COEFICIENTES MCO 
-% Estime los coeficientes de MCO. Interprete sus resultados.
 
-% Ahora debemos calcular los diferentes betas de MCO donde debemos utilizar
-% la regresion particionada para ello considerando que estamos en presencia
-% de un intercept.
+% Aqui estimamos ahora los coeficientes de MCO del modelo, utilizando las
+% variables definidas anteriormente. Para ello, utilizaremos la notacion
+% matricial de las variables.
 
-% No olvidar que nuestro modelo consta de lo siguiente:
-% Y_{ig} = \beta_0 + \beta_1 * X_{1ig} + \beta_2 * X_{2ig} + e_{ig}
-
-% donde e_{ig} = \epsilon_{ig} + \nu_g
-
-% Podemos aprovechar de la forma matricial de MCO para estimar en este caso
-% los betas
-
-% Como tenemos una constante de beta_0, esto es equivalente a que este
-% multiplicara un X = 1, por lo que podemos crear una matriz de Xs el cual
-% contenga en su primera columna una constante
-
-% El Y ya lo tenemos de antes y tiene dimension 1000 x 1, solo le cambiamos
-% el nombre
+% Renombramos el Y por simplicidad, el cual tiene dimension (1000x1)
 Y = y_ig;
-% Ahora generamos la matrix 'X' para estimar los beta de MCO
 
-% Definimos x_0
-x_0 = ones(n, 1);
+% Ahora generamos la matrix 'X' el cual contiene a todas nuestras variables
+% mas un vector de 1s para estimar el beta_0:
+x_0 = ones(N, 1); % definimos x_0
 
-% Cambiamos el nombre de los x_1i y x_2i
-X1 = matriz(:,5);
-X2 = matriz(:,4);
+% Juntamos ahora los 3 en un 'X' que tendra dimension (1000x3)
+X = [x_0 X_1ig X_2ig];
 
-% Ahora definimos el X que tendra dimension 1000x3
-X = [x_0 X1 X2];
+% Utilizando una funcion definida por nosotros previamente llamada 'MCO',
+% calculamos los coeficientes:
+[beta_gorro, e_gorro] = MCO(Y,X);
+display(beta_gorro)
 
-% Importamos la base de datos para tener una comparacion con Stata
+% Exportamos ahora los resultados en una tabla
+tabla_P2 = table(['\beta_0';'\beta_1';'\beta_2'],... 
+    [round(beta_gorro(1),4);round(beta_gorro(2),4);round(beta_gorro(3),4)]);
+writetable(tabla_P2,'tabla_P2.txt','Delimiter',' ')  
+movefile('tabla_P2.tex', 'tabla_P2.txt');
+type 'tabla_P2.txt'
+
+% Como extra, importamos la base de datos para poder tener una comparacion
+% con Stata de nuestros resultados
 matrix = [Y X e_ig matriz(:,1)];
 writematrix(matrix,'test.csv') 
 
-% Calculamos ahora los beta con la funcion de MCO que definimos
-% previamente:
-[beta_gorro] = MCO(Y,X); %calculamos los betas con una 
-% funcion que definimos (me dio lo mismo que Stata)
-
-% Redondeamos los betas para que tengan hasta 3 decimales
-beta_gorro_2 = round(beta_gorro, 2);
-
-% Exportamos los resultados en una tabla
-tabla_P2 = table(['\beta_0';'\beta_1';'\beta_2'],... 
-    [beta_gorro_2(1);beta_gorro_2(2); beta_gorro_2(3)]);
-writetable(tabla_P2,'tabla_P2.txt','Delimiter',' ')  
-type 'tabla_P2.txt'
-
 %% 3. ERRORES ESTANDAR
 
-% Calcule los siguientes errores estandar:
+% Calculamos ahora diferentes tipos de errores estandar
 
 % 3.1. Asumiendo homocedasticidad y ausencia de correlacion
-
-% Calculamos entonces los errores estandar asumiendo homocedasticidad como:
-% SD = s
-% Ya que no observamos a sigma directamente
-
-% Sabemos que s^2 = (1/(n-k)) * e'e
-
-% El e gorro se obtiene de la estimacion de MCO (se incluye entonces el 
-% e_gorro en la función definida de MCO)
-
-% Corremos nuevamente el codigo de MCO para tener nuevamente los betas sin
-% redondear
-[beta_gorro, e_gorro] = MCO(Y,X);
-
-% Ahora corremos la funcion de s^2
-N = n;
+% Estos errores se calculan como la raiz de 's', donde utilizamos una
+% funcion definida previamente por nosotros que una estimacion de la
+% varianza:
 [K,s_2] = s2(N, beta_gorro, e_gorro);
 
 % Luego, corremos la funcion de los errores estandar que estan en funcion
 % de s^2
-[var_bgorro, e_estandar] = errores_estandar(s_2,X);
-% (tambien me dio lo mismo que stata)
+[var_bgorro, ee_estandar] = errores_estandar(s_2,X);
+display(ee_estandar)
+
 
 % 3.2. Errores estandar robustos
 
-% Estos errores ahora no asumen homocedasticidad, sino heterocedasticidad,
-% por lo que el calculo es ligeramente diferente. Utilizando la definicion
-% del estimador de la varianza HC1 del Hansen (el que el libro recomienda), 
-% definimos previamente la funcion de ello y lo corremos
+% Estos errores ahora asumen heterocedasticidad. Utilizando la definicion
+% del estimador de la varianza HC1 del Hansen, utilizamos la funcion 
+% previamente definida de ello:
 [var_robust, ee_robust] = errores_robustos(N, K ,X, e_gorro);
-% (tambien me dio lo mismo que stata)
+display(ee_robust)
+
 
 % 3.3. Errores estandar agrupados
 
-% Ahora, para calcular los errores estandar agrupados, necesitamos realizar
-% la estimacion inicial de los beta a nivel de grupo ahora y no a nivel de
-% cada individuo. Por ello, agrupamos por grupo a cada variable del modelo
-% para estimar a Y nuevamente.
+% Ahora, para calcular los errores estandar agrupados, clusterizamos el
+% error del modelo bajo la definicion del Hansen, el cual considera el
+% numero de clusters en los datos:
 
-% Lista de los diferentes grupos
+% Creamos una lista de los indices de los grupos por individuo
 grupos = matriz(:,1);
 
 % Definimos ahora el numero de clusters
@@ -222,19 +176,21 @@ for j = 1:K
     e_cluster(:,j) = accumarray(grupos, (X(:,j))'.*e_gorro');
 end
 
-% Hacemos ahora la estimacion de los errores estandar robustos
+% Hacemos ahora la estimacion de los errores estandar clusterizados
 [var_cluster, ee_cluster] = errores_cluster(N, K, G, X, e_cluster);
-% (entrega el mismo valor que stata)
+display(ee_cluster)
 
 %% 4. TEST DE HIPOTESIS NULA
 
-% Quiero testar la hipotesis beta_1 = 1, entonces mi matriz R debe ser:
+% Queremos testar ahora la hipotesis de beta_1 = 1, por lo que la matriz R 
+% debe ser:
 R = [0 1 0];
 
-% Entonces, probamos los diferentes test t con los diferentes errores
+% Entonces, hacemos los diferentes test-t para los diferentes errores
 % Errores estandar 
-ttest_1 = abs(((R * beta_gorro) - 1)/(e_estandar(2)));
+ttest_1 = abs(((R * beta_gorro) - 1)/(ee_estandar(2)));
 p_value1 = 2 * (1 - tcdf(ttest_1, N-K)); % p-value para 2 colas
+
 
 % Errores robustos
 ttest_2 = abs(((R * beta_gorro) - 1)/(ee_robust(2)));

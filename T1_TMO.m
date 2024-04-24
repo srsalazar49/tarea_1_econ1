@@ -116,13 +116,14 @@ X = [x_0 X_1ig X_2ig];
 
 % Utilizando una funcion definida por nosotros previamente llamada 'MCO',
 % calculamos los coeficientes:
-[beta_gorro] = MCO(Y,X);
+[beta_gorro, e_gorro] = MCO(Y,X);
 display(beta_gorro)
 
 % Exportamos ahora los resultados en una tabla
 tabla_P2 = table(['\beta_0';'\beta_1';'\beta_2'],... 
     [round(beta_gorro(1),4);round(beta_gorro(2),4);round(beta_gorro(3),4)]);
 writetable(tabla_P2,'tabla_P2.txt','Delimiter',' ')  
+movefile('tabla_P2.tex', 'tabla_P2.txt');
 type 'tabla_P2.txt'
 
 % Como extra, importamos la base de datos para poder tener una comparacion
@@ -130,52 +131,38 @@ type 'tabla_P2.txt'
 matrix = [Y X e_ig matriz(:,1)];
 writematrix(matrix,'test.csv') 
 
-
 %% 3. ERRORES ESTANDAR
 
-% Calcule los siguientes errores estandar:
+% Calculamos ahora diferentes tipos de errores estandar
 
 % 3.1. Asumiendo homocedasticidad y ausencia de correlacion
-
-% Calculamos entonces los errores estandar asumiendo homocedasticidad como:
-% SD = s
-% Ya que no observamos a sigma directamente
-
-% Sabemos que s^2 = (1/(n-k)) * e'e
-
-% El e gorro se obtiene de la estimacion de MCO (se incluye entonces el 
-% e_gorro en la función definida de MCO)
-
-% Corremos nuevamente el codigo de MCO para tener nuevamente los betas sin
-% redondear
-[beta_gorro, e_gorro] = MCO(Y,X);
-
-% Ahora corremos la funcion de s^2
-N = n;
+% Estos errores se calculan como la raiz de 's', donde utilizamos una
+% funcion definida previamente por nosotros que una estimacion de la
+% varianza:
 [K,s_2] = s2(N, beta_gorro, e_gorro);
 
 % Luego, corremos la funcion de los errores estandar que estan en funcion
 % de s^2
-[var_bgorro, e_estandar] = errores_estandar(s_2,X);
-% (tambien me dio lo mismo que stata)
+[var_bgorro, ee_estandar] = errores_estandar(s_2,X);
+display(ee_estandar)
+
 
 % 3.2. Errores estandar robustos
 
-% Estos errores ahora no asumen homocedasticidad, sino heterocedasticidad,
-% por lo que el calculo es ligeramente diferente. Utilizando la definicion
-% del estimador de la varianza HC1 del Hansen (el que el libro recomienda), 
-% definimos previamente la funcion de ello y lo corremos
+% Estos errores ahora asumen heterocedasticidad. Utilizando la definicion
+% del estimador de la varianza HC1 del Hansen, utilizamos la funcion 
+% previamente definida de ello:
 [var_robust, ee_robust] = errores_robustos(N, K ,X, e_gorro);
-% (tambien me dio lo mismo que stata)
+display(ee_robust)
+
 
 % 3.3. Errores estandar agrupados
 
-% Ahora, para calcular los errores estandar agrupados, necesitamos realizar
-% la estimacion inicial de los beta a nivel de grupo ahora y no a nivel de
-% cada individuo. Por ello, agrupamos por grupo a cada variable del modelo
-% para estimar a Y nuevamente.
+% Ahora, para calcular los errores estandar agrupados, clusterizamos el
+% error del modelo bajo la definicion del Hansen, el cual considera el
+% numero de clusters en los datos:
 
-% Lista de los diferentes grupos
+% Creamos una lista de los indices de los grupos por individuo
 grupos = matriz(:,1);
 
 % Definimos ahora el numero de clusters
@@ -189,28 +176,38 @@ for j = 1:K
     e_cluster(:,j) = accumarray(grupos, (X(:,j))'.*e_gorro');
 end
 
-% Hacemos ahora la estimacion de los errores estandar robustos
+% Hacemos ahora la estimacion de los errores estandar clusterizados
 [var_cluster, ee_cluster] = errores_cluster(N, K, G, X, e_cluster);
-% (entrega el mismo valor que stata)
+display(ee_cluster)
 
 %% 4. TEST DE HIPOTESIS NULA
 
-% Quiero testar la hipotesis beta_1 = 1, entonces mi matriz R debe ser:
+% Queremos testar ahora la hipotesis de beta_1 = 1, por lo que la matriz R 
+% debe ser:
 R = [0 1 0];
 
-% Entonces, probamos los diferentes test t con los diferentes errores
+% Entonces, hacemos los diferentes test-t para los diferentes errores
 % Errores estandar 
-ttest_1 = abs(((R * beta_gorro) - 1)/(e_estandar(2)));
-p_value1 = 2 * (1 - tcdf(ttest_1, N-K)); % p-value para 2 colas
+ttest_1 = abs(((R * beta_gorro) - 1)/(ee_estandar(2)));
+p_value1 = 2 * (1 - tcdf(ttest_1, N - K)); % p-value para 2 colas
 
 % Errores robustos
 ttest_2 = abs(((R * beta_gorro) - 1)/(ee_robust(2)));
-p_value2 = 2 * (1 - tcdf(ttest_2, N-K)); % p-value para 2 colas
+p_value2 = 2 * (1 - tcdf(ttest_2, N - K)); % p-value para 2 colas
 
 % Errores clusters
 ttest_3 = abs(((R * beta_gorro) - 1)/(ee_cluster(2)));
-p_value3 = 2 * (1 - tcdf(ttest_3, N-K)); % p-value para 2 colas
+p_value3 = 2 * (1 - tcdf(ttest_3, N - K)); % p-value para 2 colas
 
+% Matriz con los estadisticos t
+ttest = [ttest_1 ttest_2 ttest_3];
+
+% Matriz con los p-value
+p_value = [p_value1 p_value2 p_value3];
+
+% Mostrando los resultados
+display(ttest)
+display(p_value)
 
 %% 5. MODELO CON EFECTOS FIJOS
 
