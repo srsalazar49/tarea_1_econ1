@@ -3,6 +3,11 @@
 %        Grupo 3: F. Anguita, N. Bastias, C. Cid, T Munoz O. & R. Salazar
 % ----------------------------------------------------------------------- %
 
+% Aclaramos de antemano que a lo largo del desarrollo de la tarea,
+% utilizamos funciones creadas por nosotros el cual facilita la estimacion
+% de los diferentes resultados. Todas estas funciones van adjuntas en la
+% carpeta .zip enviada con la tarea.
+
 %% Agregando los directorios por usuario
 
 clc;clear;
@@ -95,8 +100,7 @@ X_2ig = matriz(:,4);
 % Finalmente estimamos el modelo inicial con los betas verdaderos
 y_ig = beta(1) + beta(2) * X_1ig + beta(3) * X_2ig + e_ig;
 
-% A partir de esto, todas las variables tienen dimensiones de (1000x1),
-% salvo los beta que tienen dimension (3x1)
+% A partir de esto, todas las variables tienen dimensiones de (1000x1)
 
 %% 2. COEFICIENTES MCO 
 
@@ -114,8 +118,8 @@ x_0 = ones(N, 1); % definimos x_0
 % Juntamos ahora los 3 en un 'X' que tendra dimension (1000x3)
 X = [x_0 X_1ig X_2ig];
 
-% Utilizando una funcion definida por nosotros previamente llamada 'MCO',
-% calculamos los coeficientes:
+% Estimamos los coeficientes por MCO (esta funcion tambien entrega los 
+% residuos que seran utlilizados en los siguientes item)
 [beta_gorro, e_gorro] = MCO(Y,X);
 display(beta_gorro)
 
@@ -135,13 +139,10 @@ writematrix(matrix,'test.csv')
 % Calculamos ahora diferentes tipos de errores estandar
 
 % 3.1. Asumiendo homocedasticidad y ausencia de correlacion
-% Estos errores se calculan como la raiz de 's', donde utilizamos una
-% funcion definida previamente por nosotros que una estimacion de la
-% varianza:
+% Estos errores se calculan como la raiz de 's'
 [K,s_2] = s2(N, beta_gorro, e_gorro);
 
-% Luego, corremos la funcion de los errores estandar que estan en funcion
-% de s^2
+% Luego, calculamos los errores estandar que estan en funcion de s^2
 [var_bgorro, ee_estandar] = errores_estandar(s_2,X);
 display(ee_estandar)
 
@@ -149,8 +150,7 @@ display(ee_estandar)
 % 3.2. Errores estandar robustos
 
 % Estos errores ahora asumen heterocedasticidad. Utilizando la definicion
-% del estimador de la varianza HC1 del Hansen, utilizamos la funcion 
-% previamente definida de ello:
+% del estimador de la varianza HC1 del Hansen:
 [var_robust, ee_robust] = errores_robustos(N, K ,X, e_gorro);
 display(ee_robust)
 
@@ -284,8 +284,7 @@ X1 = Dummy;
 % Definimos como X2 la matriz de las 2 variables x_1ig y x_2ig
 X2 = [X_1ig X_2ig]; 
 
-% Llamamos la funcion de regresion particionada previamente definida por
-% nosotros
+% Calculamos ahora los beta con el modelo de regresion particionada
 [beta_1,beta_2] = FWL(Y,X1,X2);
 display(beta_1)
 display(beta_2)
