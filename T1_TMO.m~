@@ -123,7 +123,6 @@ display(beta_gorro)
 tabla_P2 = table(['\beta_0';'\beta_1';'\beta_2'],... 
     [round(beta_gorro(1),4);round(beta_gorro(2),4);round(beta_gorro(3),4)]);
 writetable(tabla_P2,'tabla_P2.txt','Delimiter',' ')  
-movefile('tabla_P2.tex', 'tabla_P2.txt');
 type 'tabla_P2.txt'
 
 % Como extra, importamos la base de datos para poder tener una comparacion
@@ -247,11 +246,35 @@ end
 [var_cluster, ee_cluster] = errores_cluster(N, K, G, X, e_cluster);
 display(ee_cluster)
 
+% Testamos ahora nuevamente la hipotesis nula
+% Definimos nuevamente a R
+R = [1 zeros(1,41)];
 
-% Falta correr lo de los diferentes errores y ttest que es lo mismo
+% Errores estandar 
+ttest_1 = abs(((R * beta_gorro) - 1)/(ee_estandar(2)));
+p_value1 = 2 * (1 - tcdf(ttest_1, N - K)); % p-value para 2 colas
+
+% Errores robustos
+ttest_2 = abs(((R * beta_gorro) - 1)/(ee_robust(2)));
+p_value2 = 2 * (1 - tcdf(ttest_2, N - K)); % p-value para 2 colas
+
+% Errores clusters
+ttest_3 = abs(((R * beta_gorro) - 1)/(ee_cluster(2)));
+p_value3 = 2 * (1 - tcdf(ttest_3, N - K)); % p-value para 2 colas
+
+% Matriz con los estadisticos t
+ttest = [ttest_1 ttest_2 ttest_3];
+
+% Matriz con los p-value
+p_value = [p_value1 p_value2 p_value3];
+
+% Mostrando los resultados
+display(ttest)
+display(p_value)
+
 %% 6. FWL Y MODELO DE EFECTOS FIJOS
 
-% Parte 1 de FWL
+% Ahora particionamos al X en 2 variables, d
 % Definimos como X1 la matriz de dummies de cada grupo
 X1 = Dummy;
 % Definimos como X2 la matriz de las 2 variables x_1ig y x_2ig

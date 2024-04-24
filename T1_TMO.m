@@ -274,49 +274,40 @@ display(p_value)
 
 %% 6. FWL Y MODELO DE EFECTOS FIJOS
 
-% Parte 1 de FWL
+% Ahora particionamos al X en 2 variables, donde el primero sera el grupo
+% de dummies de los efectos fijos y el segundo del X_1ig y X_2ig originales
+
 % Definimos como X1 la matriz de dummies de cada grupo
 X1 = Dummy;
+
 % Definimos como X2 la matriz de las 2 variables x_1ig y x_2ig
-X2 = [matriz(:,5) matriz(:,4)]; 
+X2 = [X_1ig X_2ig]; 
 
-% Llamamos la funcion de regresion particionada
+% Llamamos la funcion de regresion particionada previamente definida por
+% nosotros
 [beta_1,beta_2] = FWL(Y,X1,X2);
+display(beta_1)
+display(beta_2)
 
-% Hacemos lo mismo ahora pero considerando la diferencia de medias
+
+% Ahora hacemos lo mismo ahora pero considerando la desviacion de medias
 % Calculando las medias:
+mean_y = accumarray(grupos, y_ig, [], @mean); % cluster mean y_ig
+mean_x1 = accumarray(grupos, X_1ig, [], @mean); % cluster mean x_1ig
+mean_x2 = accumarray(grupos, X_2ig, [], @mean); % cluster mean x_2ig
 
-yig_mean = accumarray(grupos, y_ig, [], @mean); % cluster mean y_ig
-x1ig_mean = accumarray(grupos, (matriz(:,5)), [], @mean);  % cluster mean x_1ig
-x2ig_mean = accumarray(grupos, (matriz(:,4)), [], @mean); % cluster mean x_2ig
+% Calculamos las desviaciones en torno a la media (within transformation): 
+Y = y_ig - mean_y(grupos);
+x1 = (X_1ig - mean_x1(grupos));
+x2 = (X_2ig - mean_x2(grupos));
 
-% Calculamos las desviaciones en torno a la media (within transformation) 
-% para cada variable.
-y_punto = y_ig - yig_mean(grupos);    
-x1ig_punto = (matriz(:,5)) - x1ig_mean(grupos);
-x2ig_punto = (matriz(:,4)) - x2ig_mean(grupos);
-
-% Definimos ahora las variables para estimar por MCO
-X = [x1ig_punto, x2ig_punto]; % sin constante ya que su desviacion a la media es 0
-Y = y_punto;
-
-% Corremos el MCO
-[beta_gorro, e_gorro] = MCO(Y,X);
-
-% Obtenemos desviaciones sobre la media de grupo de las variables 
-% Comprobamos que lo de la Fer da lo mismo
-my = accumarray(grupos, y_ig, [], @mean);
-mx1 = accumarray(grupos,(matriz(:,5)), [], @mean);
-mx2 = accumarray(grupos,(matriz(:,4)), [], @mean);
-
-Y = y_ig - my(grupos);
-x1 = (matriz(:,5)) - mx1(grupos);
-x2 = (matriz(:,4)) - mx2(grupos);
-
+% Definimos la nueva matriz de los x
 X = [x1 x2];
 
 % Corremos el MCO
 [beta_gorro, e_gorro] = MCO(Y,X);
+display(beta_gorro)
+
 
 %% 7. REPETICION CON DISTINTA DISTRIBUCION DE X1
 
