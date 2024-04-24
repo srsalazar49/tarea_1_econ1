@@ -9,7 +9,6 @@
 % carpeta .zip enviada con la tarea.
 
 %% Agregando los directorios por usuario
-
 clc;clear;
 
 % Path Tamara
@@ -289,7 +288,6 @@ X2 = [X_1ig X_2ig];
 [beta_1,beta_2] = FWL(Y,X1,X2);
 display(beta_1)
 display(beta_2)
-
 
 % Ahora hacemos lo mismo ahora pero considerando la desviacion de medias
 % Calculando las medias:
