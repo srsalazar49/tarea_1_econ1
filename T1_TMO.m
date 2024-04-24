@@ -99,56 +99,37 @@ y_ig = beta(1) + beta(2) * X_1ig + beta(3) * X_2ig + e_ig;
 % salvo los beta que tienen dimension (3x1)
 
 %% 2. COEFICIENTES MCO 
-% Estime los coeficientes de MCO. Interprete sus resultados.
 
-% Ahora debemos calcular los diferentes betas de MCO donde debemos utilizar
-% la regresion particionada para ello considerando que estamos en presencia
-% de un intercept.
+% Aqui estimamos ahora los coeficientes de MCO del modelo, utilizando las
+% variables definidas anteriormente. Para ello, utilizaremos la notacion
+% matricial de las variables.
 
-% No olvidar que nuestro modelo consta de lo siguiente:
-% Y_{ig} = \beta_0 + \beta_1 * X_{1ig} + \beta_2 * X_{2ig} + e_{ig}
-
-% donde e_{ig} = \epsilon_{ig} + \nu_g
-
-% Podemos aprovechar de la forma matricial de MCO para estimar en este caso
-% los betas
-
-% Como tenemos una constante de beta_0, esto es equivalente a que este
-% multiplicara un X = 1, por lo que podemos crear una matriz de Xs el cual
-% contenga en su primera columna una constante
-
-% El Y ya lo tenemos de antes y tiene dimension 1000 x 1, solo le cambiamos
-% el nombre
+% Renombramos el Y por simplicidad, el cual tiene dimension (1000x1)
 Y = y_ig;
-% Ahora generamos la matrix 'X' para estimar los beta de MCO
 
-% Definimos x_0
-x_0 = ones(n, 1);
+% Ahora generamos la matrix 'X' el cual contiene a todas nuestras variables
+% mas un vector de 1s para estimar el beta_0:
+x_0 = ones(N, 1); % definimos x_0
 
-% Cambiamos el nombre de los x_1i y x_2i
-X1 = matriz(:,5);
-X2 = matriz(:,4);
+% Juntamos ahora los 3 en un 'X' que tendra dimension (1000x3)
+X = [x_0 X_1ig X_2ig];
 
-% Ahora definimos el X que tendra dimension 1000x3
-X = [x_0 X1 X2];
+% Utilizando una funcion definida por nosotros previamente llamada 'MCO',
+% calculamos los coeficientes:
+[beta_gorro] = MCO(Y,X);
+display(beta_gorro)
 
-% Importamos la base de datos para tener una comparacion con Stata
+% Exportamos ahora los resultados en una tabla
+tabla_P2 = table(['\beta_0';'\beta_1';'\beta_2'],... 
+    [round(beta_gorro(1),4);round(beta_gorro(2),4);round(beta_gorro(3),4)]);
+writetable(tabla_P2,'tabla_P2.txt','Delimiter',' ')  
+type 'tabla_P2.txt'
+
+% Como extra, importamos la base de datos para poder tener una comparacion
+% con Stata de nuestros resultados
 matrix = [Y X e_ig matriz(:,1)];
 writematrix(matrix,'test.csv') 
 
-% Calculamos ahora los beta con la funcion de MCO que definimos
-% previamente:
-[beta_gorro] = MCO(Y,X); %calculamos los betas con una 
-% funcion que definimos (me dio lo mismo que Stata)
-
-% Redondeamos los betas para que tengan hasta 3 decimales
-beta_gorro_2 = round(beta_gorro, 2);
-
-% Exportamos los resultados en una tabla
-tabla_P2 = table(['\beta_0';'\beta_1';'\beta_2'],... 
-    [beta_gorro_2(1);beta_gorro_2(2); beta_gorro_2(3)]);
-writetable(tabla_P2,'tabla_P2.txt','Delimiter',' ')  
-type 'tabla_P2.txt'
 
 %% 3. ERRORES ESTANDAR
 
