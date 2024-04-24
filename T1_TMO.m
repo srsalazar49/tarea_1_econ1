@@ -123,7 +123,6 @@ display(beta_gorro)
 tabla_P2 = table(['\beta_0';'\beta_1';'\beta_2'],... 
     [round(beta_gorro(1),4);round(beta_gorro(2),4);round(beta_gorro(3),4)]);
 writetable(tabla_P2,'tabla_P2.txt','Delimiter',' ')  
-movefile('tabla_P2.tex', 'tabla_P2.txt');
 type 'tabla_P2.txt'
 
 % Como extra, importamos la base de datos para poder tener una comparacion
@@ -211,28 +210,68 @@ display(p_value)
 
 %% 5. MODELO CON EFECTOS FIJOS
 
-% Requiere que agreguemos la matriz de aniquilacion ahora para cada X
-% M = I - X(X'X)^-1 X'
-% M = I - P
+% Requiere que agreguemos ahora una matriz que contenga un vector de 1s por
+% posicion de cada grupo; esto vendria siendo un desglose de la constante y
+% por ello, estimamos ahora el modelo para tener un coeficiente por grupo
+% sin considerar la constante del inicio
 
-% Calculamos la proyeccion para el X generico
-P = X * ((X'*X)^(-1))* X';
-I = eye(N);
-M = I - P;
-
-% Dummies por grupo
+% Creamos una matriz de dummies por grupo
 Dummy = dummyvar(grupos);
-D = diag(Dummy);
-M_D = M * Dummy;
 
-X_aux = [X1 X2 Dummy];
-X = X_aux;
+% Armamos nuevamente ahora la variable 'X'
+X = [X_1ig X_2ig Dummy];
 
-% Calculo del efecto fijo por grupos
+% Calculamos ahora el MCO, el cual considera el efecto fijo por grupo
 [beta_gorro, e_gorro] = MCO(Y,X);
-% (entrega lo mismo que Stata)
 
-% Falta correr lo de los diferentes errores y ttest que es lo mismo
+% Calculamos ahora nuevamente los diferentes tipos de error:
+% Error estandar
+[K,s_2] = s2(N, beta_gorro, e_gorro);
+[var_bgorro, ee_estandar] = errores_estandar(s_2,X);
+display(ee_estandar)
+
+% Error robusto
+[var_robust, ee_robust] = errores_robustos(N, K ,X, e_gorro);
+display(ee_robust)
+
+% Error clusterizado
+% Clusterizamos el error
+e_cluster = zeros(G,K);
+
+% Generamos un loop para que clusterice los errores por grupo
+for j = 1:K
+    e_cluster(:,j) = accumarray(grupos, (X(:,j))'.*e_gorro');
+end
+
+[var_cluster, ee_cluster] = errores_cluster(N, K, G, X, e_cluster);
+display(ee_cluster)
+
+% Testamos ahora nuevamente la hipotesis nula
+% Definimos nuevamente a R
+R = [1 zeros(1,41)];
+
+% Errores estandar 
+ttest_1 = abs(((R * beta_gorro) - 1)/(ee_estandar(2)));
+p_value1 = 2 * (1 - tcdf(ttest_1, N - K)); % p-value para 2 colas
+
+% Errores robustos
+ttest_2 = abs(((R * beta_gorro) - 1)/(ee_robust(2)));
+p_value2 = 2 * (1 - tcdf(ttest_2, N - K)); % p-value para 2 colas
+
+% Errores clusters
+ttest_3 = abs(((R * beta_gorro) - 1)/(ee_cluster(2)));
+p_value3 = 2 * (1 - tcdf(ttest_3, N - K)); % p-value para 2 colas
+
+% Matriz con los estadisticos t
+ttest = [ttest_1 ttest_2 ttest_3];
+
+% Matriz con los p-value
+p_value = [p_value1 p_value2 p_value3];
+
+% Mostrando los resultados
+display(ttest)
+display(p_value)
+
 %% 6. FWL Y MODELO DE EFECTOS FIJOS
 
 % Parte 1 de FWL
