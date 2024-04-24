@@ -142,7 +142,7 @@ writematrix(matrix,'test.csv')
 
 % Luego, corremos la funcion de los errores estandar que estan en funcion
 % de s^2
-[var_bgorro, ee_estandar] = errores_estandar(s_2,X);
+[ee_estandar] = errores_estandar(s_2,X);
 display(ee_estandar)
 
 
@@ -151,7 +151,7 @@ display(ee_estandar)
 % Estos errores ahora asumen heterocedasticidad. Utilizando la definicion
 % del estimador de la varianza HC1 del Hansen, utilizamos la funcion 
 % previamente definida de ello:
-[var_robust, ee_robust] = errores_robustos(N, K ,X, e_gorro);
+[ee_robust] = errores_robustos(N, K ,X, e_gorro);
 display(ee_robust)
 
 
@@ -176,26 +176,27 @@ for j = 1:K
 end
 
 % Hacemos ahora la estimacion de los errores estandar clusterizados
-[var_cluster, ee_cluster] = errores_cluster(N, K, G, X, e_cluster);
+[ee_cluster] = errores_cluster(N, K, G, X, e_cluster);
 display(ee_cluster)
 
 %% 4. TEST DE HIPOTESIS NULA
 
-% Queremos testar ahora la hipotesis de beta_1 = 1, por lo que la matriz R 
+% Queremos testar ahora la hipotesis de beta_1 = 2, por lo que la matriz R 
 % debe ser:
 R = [0 1 0];
+c = 2; % este es el valor de la hipotesis a testear
 
 % Entonces, hacemos los diferentes test-t para los diferentes errores
 % Errores estandar 
-ttest_1 = abs(((R * beta_gorro) - 1)/(ee_estandar(2)));
+ttest_1 = abs(((R * beta_gorro) - c)/(ee_estandar(2)));
 p_value1 = 2 * (1 - tcdf(ttest_1, N - K)); % p-value para 2 colas
 
 % Errores robustos
-ttest_2 = abs(((R * beta_gorro) - 1)/(ee_robust(2)));
+ttest_2 = abs(((R * beta_gorro) - c)/(ee_robust(2)));
 p_value2 = 2 * (1 - tcdf(ttest_2, N - K)); % p-value para 2 colas
 
 % Errores clusters
-ttest_3 = abs(((R * beta_gorro) - 1)/(ee_cluster(2)));
+ttest_3 = abs(((R * beta_gorro) - c)/(ee_cluster(2)));
 p_value3 = 2 * (1 - tcdf(ttest_3, N - K)); % p-value para 2 colas
 
 % Matriz con los estadisticos t
@@ -312,22 +313,21 @@ display(beta_gorro)
 %% 7. REPETICION CON DISTINTA DISTRIBUCION DE X1
 
 % Repetimos nuevamente todo el procedimiento de la 1 cambiando ahora como
-% se define el x_1ig
+% se define el X_1ig
+
 clc;clear;
 
-% Parametros
+% Fijamos nuevamente los parametros
 beta = [1, 2, 4];                       % Vector beta
-n = 1000;                               % Numero de personas
+N = 1000;                               % Numero de personas
 grupo = 40;                             % Numero de grupos
 n_g = n/grupo;                          % Cantidad de personas por grupo
 
-% Matriz que guardara los resultados de cada individuo indexados por grupo
-matriz = zeros(n,4); % Matriz que guardara los resultados de cada individuo
+% Utilizamos nuevamente una matriz auxiliar para las variables
+matriz = zeros(n,4);
 
-% Generar un loop a nivel de grupo para ir generando todas las variables
-% Se itera por cada grupo y dentro de ello, se itera a nivel de individuo,
-% cada resultado se guarda en una matriz diferente que luego se van a
-% concatenar
+% Generamos un loop el cual va a calcular el 'v_g', 'epislon_ig' y 'x_2ig',
+% de manera separada calculamos el 'w_i' y 'x_1ig'
 
 rng(14) % fijando la semilla
 j = 1; % variable auxiliar
@@ -338,48 +338,48 @@ for g = 1:grupo
     
     % Calculamos el error a nivel de grupo
     v_g = normrnd(0,1);
-    matriz((j:j+24),2) = v_g'; % guarda el resultado en la columna 2 de la 
-    % matriz
+    matriz((j:j+24),2) = v_g'; % columna 2
         
     % Calculamos el error individual por grupo
     epsilon_ig = normrnd(0,1,[1,n_g]);
-    matriz((j:j+24),3) = epsilon_ig'; % guarda el resultado en la columna 3
+    matriz((j:j+24),3) = epsilon_ig'; % columna 3
         
-    % Calculamos el X_{2ig} por grupo
+    % Calculamos el X_2ig
     x_2ig = normrnd(5,1,[1,n_g]);  
-    matriz((j:j+24),4) = x_2ig';  % guarda el resultado en la columna 4
+    matriz((j:j+24),4) = x_2ig';  % columna 4
 end
 
-% Calculamos ahora el w_i
+% Todos los generados son de dimension (1000x1)
+
+
+% Calculamos ahora un vector de (1000x1) de w_i
 w_i = unifrnd(0,1,[n,1]); 
 
-j = 1;
-x = zeros(n,1);
+x = zeros(n,1); % creamos matriz de los X_1ig con un loop en torno a los w_i
+
 % Hacemos un loop para ahora calcular a x_1ig
 for i = 1:n
     
-    % Calculamos el X_{1ig} condicional al valor que toma 'w_i'
+    % Calculamos el X_1ig condicional al valor que toma 'w_i'
     if  w_i < 0.5      % valores < 0.5                   
        x_1ig = normrnd(3,1);  
     else             % valores >= a 0.5
        x_1ig = normrnd(5,1);
     end
        
-    x(i,1) = x_1ig;  % guarda el resultado en la columna 6
-    j = j+1;
+    x(i,1) = x_1ig;  % % guarda el resultado
 end
 
+% Renombramos ahora en un vector aparte los X respectivos
+X_1ig = x_1ig;
+X_2ig = matriz(:,4);
 
-% Ahora bien, el termino de error del modelo Y_{ig} consider la suma de los
-% errores individuales y grupales, por lo que se puede reescribir como
-% e_{ig} = epislon_{ig} + v_g
+% Volvemos a agrupar los errores tal como se hizo anteriormente
 e_ig = matriz(:,3) + matriz(:,2);
 
-% Finalmente entonces, el modelo a estimar considera los diferentes betas
-% con los diferentes coeficientes, columnas de la matriz y los errores
-y_ig = beta(1) + beta(2) * x + beta(3) * matriz(:,4) + e_ig;
+% Estimamos nuevamente el modelo original con los nuevos X_1ig
+y_ig = beta(1) + beta(2) * X_1ig + beta(3) * X_2ig + e_ig;
 
-% A partir de esto, todas las variables tienen dimensiones de (1000x1)
 
 
 
