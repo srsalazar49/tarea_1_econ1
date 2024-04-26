@@ -101,6 +101,12 @@ y_ig = beta(1) + beta(2) * X_1ig + beta(3) * X_2ig + e_ig;
 
 % A partir de esto, todas las variables tienen dimensiones de (1000x1)
 
+%Es útil ver un gráfico de los errores con X_1ig para comprobar la relación lineal
+scatter(X_1ig,matriz(:,2), 'Marker', 'o', 'MarkerFaceColor', [0.18, 0.8, 0.44], 'SizeData', 20);
+xlabel('Vg');
+ylabel('X1');
+title('Endogeneidad');
+
 %% 2. COEFICIENTES MCO 
 
 % Aqui estimamos ahora los coeficientes de MCO del modelo, utilizando las
@@ -404,6 +410,7 @@ X = [x1 x2];
 display(beta_gorro)
 
 % Exportamos ahora los betas de dif. de 
+
 %% 7. REPETICION CON DISTINTA DISTRIBUCION DE X1
 clc;clear;
 
@@ -492,6 +499,12 @@ type 'tabla_P7_MCO.txt'
 % con Stata de nuestros resultados
 matrix = [Y X e_ig matriz(:,1)];
 writematrix(matrix,'test_P7.csv') 
+
+%Es útil ver un gráfico de los errores con X_1ig para comprobar la relación lineal
+scatter(X_1ig,matriz(:,2), 'Marker', 'o', 'MarkerFaceColor', [0.18, 0.8, 0.44], 'SizeData', 20);
+xlabel('Vg');
+ylabel('X1');
+title('Endogeneidad');
 
 % Calculamos ahora los diferentes errores:
 % Errores estandar
